@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --fg:#09090b; --muted:#71717a; --border:#e4e4e7; --input:#e4e4e7;
+  --primary:#18181b; --primary-fg:#fafafa; --ring:rgba(24,24,27,.15); --hover:#f4f4f5;
+  --danger:#dc2626; --danger-bg:#fef2f2; --ok:#15803d; --ok-bg:#f0fdf4; --accent:#16a34a;
+  --pro-bg:#fafafa;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#09090b; --fg:#fafafa; --muted:#a1a1aa; --border:#27272a; --input:#27272a;
+    --primary:#fafafa; --primary-fg:#18181b; --ring:rgba(250,250,250,.18); --hover:#18181b;
+    --danger:#f87171; --danger-bg:#2a1214; --ok:#4ade80; --ok-bg:#0f2417; --accent:#4ade80;
+    --pro-bg:#0e0e11;
+  }
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+a{color:inherit}
+.wrap{width:100%;max-width:880px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+header{border-bottom:1px solid var(--border)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+.brand{font-weight:700;font-size:16px;text-decoration:none;letter-spacing:-.01em}
+.nav-r{display:flex;gap:8px;align-items:center}
+.pill-btn{height:34px;padding:0 14px;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--fg);font:inherit;font-weight:500;font-size:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.pill-btn:hover{background:var(--hover)}
+main{flex:1;padding:40px 0 24px}
+.hero{text-align:center;margin-bottom:28px}
+.hero h1{font-size:clamp(26px,5vw,36px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.hero p{color:var(--muted);margin-top:10px;font-size:15px}
+.controls{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:28px}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--border);border-radius:10px;background:var(--hover);gap:2px}
+.seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:500;font-size:13px;height:34px;padding:0 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.seg button[aria-checked="true"]{background:var(--bg);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.save-badge{background:var(--ok-bg);color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent);font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px}
+.seg.small button{height:30px;padding:0 12px;font-size:12px}
+.status{display:none;margin:0 auto 22px;max-width:560px;padding:12px 14px;border-radius:10px;font-size:13px;text-align:center}
+.status.show{display:block}
+.status.ok{background:var(--ok-bg);color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
+.status.err{background:var(--danger-bg);color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent)}
+.status.info{background:var(--hover);color:var(--fg);border:1px solid var(--border)}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+.plan{border:1px solid var(--border);border-radius:14px;padding:24px;display:flex;flex-direction:column;background:var(--bg);position:relative}
+.plan.pro{border:2px solid var(--primary);background:var(--pro-bg)}
+.ribbon{position:absolute;top:-12px;left:24px;background:var(--primary);color:var(--primary-fg);font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.02em}
+.plan h2{font-size:16px;font-weight:600}
+.plan .desc{color:var(--muted);margin-top:4px;min-height:21px}
+.price{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin:18px 0 2px}
+.price .amt{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.price .per{color:var(--muted);font-size:14px}
+.price .strike{color:var(--muted);text-decoration:line-through;font-size:15px}
+.subprice{color:var(--muted);font-size:13px;min-height:20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.subprice .save{color:var(--ok);font-weight:600}
+ul.feat{list-style:none;padding:0;margin:20px 0 24px;display:grid;gap:10px;flex:1}
+ul.feat li{display:flex;gap:10px;align-items:flex-start}
+ul.feat svg{flex:none;width:18px;height:18px;margin-top:1px;color:var(--accent)}
+ul.feat li.off{color:var(--muted)}
+ul.feat li.off svg{color:var(--muted)}
+.btn{height:44px;border-radius:10px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px solid var(--input);background:transparent;color:var(--fg);transition:background .15s,opacity .15s;text-decoration:none}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.btn.primary:hover{opacity:.9;background:var(--primary)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn svg{width:18px;height:18px;flex:none}
+.pay-stack{display:grid;gap:10px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--border)}
+.apps{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:2px}
+.apps span{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:2px 8px}
+.secure{display:flex;justify-content:center;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:12px;text-align:center}
+.secure svg{width:14px;height:14px;flex:none}
+.note{color:var(--muted);font-size:12px;text-align:center;margin-top:20px;max-width:600px;margin-left:auto;margin-right:auto}
+.spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.faq{margin-top:44px}
+.faq h3{font-size:18px;font-weight:600;margin-bottom:12px}
+details{border-bottom:1px solid var(--border);padding:12px 0}
+summary{cursor:pointer;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-size:18px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{color:var(--muted);margin-top:8px}
+footer{border-top:1px solid var(--border);padding:20px 0 max(20px,env(safe-area-inset-bottom));margin-top:24px}
+.foot{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;color:var(--muted);font-size:13px}
+.foot a{text-decoration:none}.foot a:hover{color:var(--fg);text-decoration:underline}
+.copy{text-align:center;color:var(--muted);font-size:12px;margin-top:10px}
+[hidden]{display:none!important}
+@media (max-width:720px){
+  .plans{grid-template-columns:1fr}
+  .plan.pro{order:-1}   /* Pro first on phones */
+  .plan{padding:20px}
+  main{padding-top:28px}
+  .price .amt{font-size:36px}
+  .seg button{padding:0 12px}
+}
+@media (max-width:380px){ .seg button{font-size:12px;padding:0 9px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html" id="brand">Acme</a>
+    <div class="nav-r">
+      <span id="who" style="color:var(--muted);font-size:13px" hidden></span>
+      <a class="pill-btn" id="nav-login" href="index.html">Login</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Simple, transparent pricing</h1>
+    <p>Start free. Upgrade to Pro when you need more.</p>
+  </section>
+
+  <div class="controls">
+    <div class="seg" role="radiogroup" aria-label="Billing period" id="seg-bill">
+      <button type="button" role="radio" aria-checked="true"  data-bill="month">Monthly</button>
+      <button type="button" role="radio" aria-checked="false" data-bill="year">Yearly <span class="save-badge" id="badge-save" hidden></span></button>
+    </div>
+    <div class="seg small" role="radiogroup" aria-label="Currency" id="seg-cur">
+      <button type="button" role="radio" aria-checked="false" data-cur="INR">₹ INR</button>
+      <button type="button" role="radio" aria-checked="false" data-cur="USD">$ USD</button>
+    </div>
+  </div>
+
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+
+  <section class="plans" id="plans">
+    <!-- FREE -->
+    <article class="plan">
+      <h2>Free</h2>
+      <p class="desc">For trying things out</p>
+      <div class="price"><span class="amt" id="free-amt">$0</span><span class="per">forever</span></div>
+      <div class="subprice">No card required</div>
+      <ul class="feat" id="feat-free"></ul>
+      <a class="btn" id="btn-free" href="index.html?v=signup">Get started free</a>
+    </article>
+
+    <!-- PRO -->
+    <article class="plan pro">
+      <span class="ribbon">MOST POPULAR</span>
+      <h2>Pro</h2>
+      <p class="desc">For power users and teams</p>
+      <div class="price">
+        <span class="amt" id="pro-amt">—</span>
+        <span class="per" id="pro-per">/ month</span>
+        <span class="strike" id="pro-strike" hidden></span>
+      </div>
+      <div class="subprice" id="pro-sub">&nbsp;</div>
+      <ul class="feat" id="feat-pro"></ul>
+
+      <div class="pay-stack" id="pay-inr" hidden>
+        <button class="btn primary" type="button" id="btn-upi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+          <span>Pay with UPI</span>
+        </button>
+        <div class="apps" aria-label="Supported UPI apps"><span>Google Pay</span><span>PhonePe</span><span>Paytm</span><span>BHIM</span><span>Any UPI app</span></div>
+        <div class="or">or</div>
+        <button class="btn" type="button" id="btn-other">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <span>Card, Netbanking &amp; Wallets</span>
+        </button>
+      </div>
+      <div class="pay-stack" id="pay-usd" hidden>
+        <button class="btn primary" type="button" id="btn-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <span>Pay with card</span>
+        </button>
+      </div>
+      <div class="pay-stack" id="pay-active" hidden>
+        <button class="btn primary" type="button" id="btn-extend"><span>Add more time</span></button>
+        <a class="btn" href="index.html">Go to my account</a>
+      </div>
+      <div class="secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span>Secure payment by Razorpay · We never see your card or UPI PIN</span>
+      </div>
+    </article>
+  </section>
+
+  <p class="note" id="note"></p>
+
+  <section class="faq">
+    <h3>Frequently asked questions</h3>
+    <details><summary>Will I be charged automatically every month?</summary><p>No. Each payment buys one month or one year of Pro. We do not auto-debit your account, so there are no surprise charges. When your plan ends you can renew with one tap.</p></details>
+    <details><summary>Which payment methods are supported?</summary><p>In India: all UPI apps (Google Pay, PhonePe, Paytm, BHIM and others), debit and credit cards, netbanking and popular wallets. Outside India: international credit and debit cards.</p></details>
+    <details><summary>How does UPI work on my phone?</summary><p>Tap “Pay with UPI” and choose your UPI app. It opens directly, you approve the payment with your UPI PIN, and you return here with Pro already active. On a computer you can scan a QR code with any UPI app instead.</p></details>
+    <details><summary>Can I get a refund?</summary><p>Yes, within the refund window described in our <a href="refund.html">Refund &amp; Cancellation Policy</a>.</p></details>
+    <details><summary>Why is the price different in rupees?</summary><p>We show a fixed rupee price for customers in India so the amount you see is exactly what you pay. You can switch between ₹ and $ at any time.</p></details>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav class="foot" aria-label="Legal">
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="refund.html">Refund &amp; Cancellation</a>
+      <a href="delivery.html">Shipping &amp; Delivery</a>
+      <a href="contact.html">Contact Us</a>
+    </nav>
+    <p class="copy" id="copy"></p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
+<script>
+(() => {
+  "use strict";
+  const CFG = window.APP_CONFIG || {};
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const CROSS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+  // ---------- Edit your plan features here ----------
+  const FREE_FEATURES = [
+    [true,  "Up to 3 projects"],
+    [true,  "Basic features"],
+    [true,  "Community support"],
+    [false, "Advanced analytics"],
+    [false, "Priority support"]
+  ];
+  const PRO_FEATURES = [
+    [true, "Everything in Free"],
+    [true, "Unlimited projects"],
+    [true, "Advanced analytics"],
+    [true, "Priority email support"],
+    [true, "Early access to new features"]
+  ];
+
+  $("#brand").textContent = CFG.APP_NAME || "Home";
+  $("#copy").textContent = "© " + new Date().getFullYear() + " " + (CFG.COMPANY_NAME || CFG.APP_NAME || "");
+  document.title = "Pricing" + (CFG.APP_NAME ? " · " + CFG.APP_NAME : "");
+  const fill = (el, list) => (el.innerHTML = list.map(([on, t]) => `<li class="${on ? "" : "off"}">${on ? CHECK : CROSS}<span>${t}</span></li>`).join(""));
+  fill($("#feat-free"), FREE_FEATURES); fill($("#feat-pro"), PRO_FEATURES);
+
+  const configured = CFG.SUPABASE_URL && !CFG.SUPABASE_URL.includes("YOUR-PROJECT");
+  if (!configured) { statusMsg("err", "Setup needed: open config.js and add your Supabase URL and anon key."); return; }
+  const sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+  /* ---------- state ---------- */
+  const state = { bill: "month", cur: detectCurrency(), plans: {}, user: null, sub: null };
+
+  function detectCurrency() {
+    try { const saved = localStorage.getItem("pref_currency"); if (saved === "INR" || saved === "USD") return saved; } catch (_) {}
+    let tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (_) {}
+    const langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""]);
+    const inTz = /^Asia\/(Calcutta|Kolkata)$/.test(tz);
+    const inLang = langs.some(l => /-IN$/i.test(l));
+    return inTz || inLang ? "INR" : "USD";
+  }
+
+  const fmt = (minor, cur) => new Intl.NumberFormat(cur === "INR" ? "en-IN" : "en-US", { style: "currency", currency: cur, maximumFractionDigits: minor % 100 === 0 ? 0 : 2 }).format(minor / 100);
+  const amountOf = (plan, cur) => (cur === "INR" ? plan.amount_inr : plan.amount_usd);
+
+  function statusMsg(kind, text) {
+    const s = $("#status"); s.className = "status show " + kind; s.textContent = text;
+  }
+  function clearStatus() { $("#status").className = "status"; }
+
+  /* ---------- rendering ---------- */
+  function render() {
+    const { bill, cur, plans } = state;
+    const m = plans.pro_monthly, y = plans.pro_yearly;
+    $$("[data-bill]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.bill === bill)));
+    $$("[data-cur]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.cur === cur)));
+    $("#free-amt").textContent = fmt(0, cur);
+    if (!m || !y) return;
+
+    const mAmt = amountOf(m, cur), yAmt = amountOf(y, cur);
+    const fullYear = mAmt * 12;
+    const pct = fullYear > 0 ? Math.round((1 - yAmt / fullYear) * 100) : 0;
+
+    const badge = $("#badge-save");
+    if (pct > 0) { badge.textContent = "Save " + pct + "%"; badge.hidden = false; } else badge.hidden = true;
+
+    const strike = $("#pro-strike"), sub = $("#pro-sub");
+    if (bill === "year") {
+      $("#pro-amt").textContent = fmt(yAmt, cur); $("#pro-per").textContent = "/ year";
+      if (pct > 0) { strike.textContent = fmt(fullYear, cur); strike.hidden = false; } else strike.hidden = true;
+      sub.innerHTML = `<span>Only ${fmt(Math.round(yAmt / 12), cur)} / month</span>` + (pct > 0 ? `<span class="save">You save ${pct}% (${fmt(fullYear - yAmt, cur)})</span>` : "");
+    } else {
+      $("#pro-amt").textContent = fmt(mAmt, cur); $("#pro-per").textContent = "/ month"; strike.hidden = true;
+      sub.innerHTML = pct > 0 ? `<span>Switch to yearly and save ${pct}%</span>` : "&nbsp;";
+    }
+
+    const active = isActive();
+    $("#pay-inr").hidden = active || cur !== "INR";
+    $("#pay-usd").hidden = active || cur === "INR";
+    $("#pay-active").hidden = !active;
+    $("#note").textContent = cur === "INR"
+      ? "Pay with any UPI app, card, netbanking or wallet. One payment = one " + (bill === "year" ? "year" : "month") + " of Pro (no auto-renewal)."
+      : "International cards accepted. One payment = one " + (bill === "year" ? "year" : "month") + " of Pro (no auto-renewal). UPI and netbanking are available when paying in ₹.";
+  }
+
+  function isActive() { return !!(state.sub && state.sub.status === "active" && new Date(state.sub.current_period_end) > new Date()); }
+  function showSubStatus() {
+    if (isActive()) {
+      const d = new Date(state.sub.current_period_end).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+      statusMsg("ok", "✓ Pro is active until " + d + ".");
+    }
+  }
+
+  $$("[data-bill]").forEach(b => b.addEventListener("click", () => { state.bill = b.dataset.bill; render(); }));
+  $$("[data-cur]").forEach(b => b.addEventListener("click", () => {
+    state.cur = b.dataset.cur; try { localStorage.setItem("pref_currency", state.cur); } catch (_) {} render();
+  }));
+
+  /* ---------- data ---------- */
+  async function load() {
+    const { data: plans, error } = await sb.from("plans").select("*").order("sort_order");
+    if (error || !plans || !plans.length) { statusMsg("err", "Could not load prices. Please refresh. (Did you run payments.sql?)"); return; }
+    plans.forEach(p => (state.plans[p.id] = p));
+    await refreshUser();
+    render(); showSubStatus();
+  }
+  async function refreshUser() {
+    const { data: { session } } = await sb.auth.getSession();
+    state.user = session ? session.user : null;
+    state.sub = null;
+    const login = $("#nav-login"), who = $("#who");
+    if (state.user) {
+      who.textContent = state.user.email; who.hidden = false; login.textContent = "Account";
+      const { data } = await sb.from("subscriptions").select("plan_id,status,current_period_end").maybeSingle();
+      state.sub = data || null;
+      $("#btn-free").textContent = "Current plan"; $("#btn-free").removeAttribute("href"); $("#btn-free").setAttribute("aria-disabled", "true");
+    } else { who.hidden = true; login.textContent = "Login"; }
+  }
+
+  /* ---------- payment ---------- */
+  let paying = false;
+  function goLogin() {
+    try { sessionStorage.setItem("postLoginRedirect", "pricing.html"); } catch (_) {}
+    location.href = "index.html";
+  }
+  function setBusy(btn, on, label) {
+    if (on) { btn.dataset.html = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span><span>' + label + "</span>"; }
+    else { btn.disabled = false; if (btn.dataset.html) btn.innerHTML = btn.dataset.html; }
+  }
+  async function fnError(error) {
+    try { const j = await error.context.json(); if (j && j.error) return j.error; } catch (_) {}
+    return error.message || "Something went wrong. Please try again.";
+  }
+
+  // mode: "upi" | "other" | "card"
+  async function pay(mode, btn) {
+    if (paying) return;
+    clearStatus();
+    if (!state.user) return goLogin();
+    if (typeof Razorpay === "undefined") return statusMsg("err", "Payment window is still loading or blocked by an ad-blocker. Please retry.");
+
+    const planId = state.bill === "year" ? "pro_yearly" : "pro_monthly";
+    paying = true; setBusy(btn, true, "Starting secure payment…");
+    const { data: order, error } = await sb.functions.invoke("create-order", { body: { plan_id: planId, currency: state.cur } });
+    if (error || !order || !order.order_id) {
+      paying = false; setBusy(btn, false);
+      const msg = error ? await fnError(error) : (order && order.error) || "Could not start the payment.";
+      if (/log in/i.test(msg)) return goLogin();
+      return statusMsg("err", msg);
+    }
+
+    const meta = (state.user.user_metadata || {});
+    const display = {
+      blocks: {
+        upi_block:   { name: "Pay with UPI",                    instruments: [{ method: "upi" }] },
+        other_block: { name: "Cards, Netbanking & Wallets",     instruments: [{ method: "card" }, { method: "netbanking" }, { method: "wallet" }] }
+      },
+      sequence: mode === "upi" ? ["block.upi_block"] : ["block.other_block"],
+      preferences: { show_default_blocks: false }
+    };
+    const options = {
+      key: order.key_id,
+      amount: order.amount,
+      currency: order.currency,
+      order_id: order.order_id,
+      name: CFG.COMPANY_NAME || CFG.APP_NAME || "Pro",
+      description: order.plan_name + " — " + (planId === "pro_yearly" ? "1 year" : "1 month"),
+      prefill: { name: meta.full_name || meta.name || "", email: order.email || state.user.email || "" },
+      notes: { plan: planId },
+      theme: { color: "#18181b" },
+      retry: { enabled: true, max_count: 3 },
+      modal: { confirm_close: true, ondismiss: () => { paying = false; setBusy(btn, false); pollOrder(order.order_id); } },
+      handler: (resp) => onSuccess(resp, btn)
+    };
+    if (order.currency === "INR") options.config = { display };   // custom UPI-first layout (INR only)
+
+    try {
+      const rzp = new Razorpay(options);
+      rzp.on("payment.failed", (r) => {
+        const d = r && r.error && r.error.description;
+        statusMsg("err", (d || "Payment failed.") + " You have not been charged. Please try again.");
+      });
+      setBusy(btn, false); // button is free again while the Razorpay window is on top
+      rzp.open();
+    } catch (e) {
+      paying = false; setBusy(btn, false); statusMsg("err", "Could not open the payment window. Please try again.");
+    }
+  }
+
+  async function onSuccess(resp, btn) {
+    statusMsg("info", "Payment received. Activating Pro…");
+    const { data, error } = await sb.functions.invoke("verify-payment", { body: resp });
+    paying = false;
+    if (error || !data || !data.ok) {
+      // The webhook will still activate it; keep checking for a short while.
+      statusMsg("info", "Payment received. Finalising your upgrade…");
+      return pollOrder(resp.razorpay_order_id, true);
+    }
+    await afterActivated();
+  }
+
+  // After the window closes (e.g. paid inside a UPI app), poll until the server confirms.
+  let polling = null;
+  function pollOrder(orderId, silent) {
+    clearInterval(polling); let tries = 0;
+    polling = setInterval(async () => {
+      tries++;
+      const { data } = await sb.from("payments").select("status").eq("provider_order_id", orderId).maybeSingle();
+      if (data && data.status === "paid") { clearInterval(polling); await afterActivated(); }
+      else if (tries >= 20) { clearInterval(polling); if (silent) statusMsg("info", "Still confirming your payment. If money was deducted, Pro will activate automatically within a few minutes."); }
+    }, 3000);
+  }
+  async function afterActivated() {
+    await refreshUser(); render();
+    const d = state.sub ? new Date(state.sub.current_period_end).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "";
+    statusMsg("ok", "🎉 Payment successful! Pro is active" + (d ? " until " + d : "") + ".");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  $("#btn-upi").addEventListener("click",  e => pay("upi",   e.currentTarget));
+  $("#btn-other").addEventListener("click", e => pay("other", e.currentTarget));
+  $("#btn-card").addEventListener("click",  e => pay("card",  e.currentTarget));
+  $("#btn-extend").addEventListener("click", () => { state.sub = null; render(); });
+  $("#btn-free").addEventListener("click", e => { if (e.currentTarget.getAttribute("aria-disabled")) e.preventDefault(); });
+
+  // Returning from a UPI app on mobile: re-check the subscription.
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && state.user && !isActive()) { await refreshUser(); render(); if (isActive()) showSubStatus(); }
+  });
+  sb.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_OUT") { state.user = null; state.sub = null; render(); } });
+
+  render();
+  load();
+})();
+</script>
+</body>
+</html>

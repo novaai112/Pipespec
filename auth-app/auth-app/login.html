@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --fg:#09090b; --muted:#71717a; --border:#e4e4e7; --input:#e4e4e7;
+  --primary:#18181b; --primary-fg:#fafafa; --ring:rgba(24,24,27,.15);
+  --danger:#dc2626; --danger-bg:#fef2f2; --ok:#15803d; --ok-bg:#f0fdf4; --hover:#f4f4f5;
+  --radius:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#09090b; --fg:#fafafa; --muted:#a1a1aa; --border:#27272a; --input:#27272a;
+    --primary:#fafafa; --primary-fg:#18181b; --ring:rgba(250,250,250,.18);
+    --danger:#f87171; --danger-bg:#2a1214; --ok:#4ade80; --ok-bg:#0f2417; --hover:#18181b;
+  }
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg);color:var(--fg);font-size:14px;line-height:1.5;
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+}
+.card{
+  width:100%;max-width:384px;border:1px solid var(--border);border-radius:12px;
+  padding:24px;background:var(--bg);
+}
+.card.wide{max-width:440px}
+h1{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.sub{color:var(--muted);margin-top:6px;margin-bottom:20px}
+form{display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+label{font-weight:500;font-size:14px}
+input{
+  width:100%;height:40px;padding:0 12px;border:1px solid var(--input);border-radius:8px;
+  background:transparent;color:var(--fg);font:inherit;font-size:14px;outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+input::placeholder{color:var(--muted);opacity:.8}
+input:focus-visible{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+input[aria-invalid="true"]{border-color:var(--danger)}
+.pw{position:relative}
+.pw input{padding-right:44px}
+.eye{
+  position:absolute;right:2px;top:2px;width:36px;height:36px;border:0;background:transparent;
+  color:var(--muted);cursor:pointer;border-radius:6px;display:grid;place-items:center;
+}
+.eye:hover{color:var(--fg);background:var(--hover)}
+.eye svg{width:18px;height:18px}
+.btn{
+  height:40px;border-radius:8px;font:inherit;font-weight:500;font-size:14px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  border:1px solid var(--input);background:transparent;color:var(--fg);transition:background .15s, opacity .15s;
+}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.btn.primary:hover{opacity:.9;background:var(--primary)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn svg{width:18px;height:18px}
+.spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+a,.link{color:var(--fg);text-decoration:none;cursor:pointer;background:none;border:0;font:inherit;padding:0}
+.link.u,.foot a{text-decoration:underline;text-underline-offset:4px}
+.link:hover,a:hover{opacity:.75}
+.foot{text-align:center;margin-top:16px}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.alert{display:none;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.45}
+.alert.show{display:block}
+.alert.err{background:var(--danger-bg);color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent)}
+.alert.ok{background:var(--ok-bg);color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
+.hint{color:var(--danger);font-size:12px;min-height:0;display:none}
+.hint.show{display:block}
+.meter{display:flex;gap:4px;margin-top:2px}
+.meter i{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .2s}
+.rules{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px;color:var(--muted)}
+.rules li::before{content:"○ ";}
+.rules li.ok{color:var(--ok)}
+.rules li.ok::before{content:"● ";}
+.center{text-align:center}
+.icon-big{width:48px;height:48px;border-radius:50%;background:var(--hover);display:grid;place-items:center;margin:0 auto 16px}
+.icon-big svg{width:24px;height:24px}
+.profile{display:flex;align-items:center;gap:12px;margin:16px 0 20px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--primary);color:var(--primary-fg);display:grid;place-items:center;font-weight:600;overflow:hidden;flex:none}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.pname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmail{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:6px;margin-bottom:20px}
+.meta b{color:var(--fg);font-weight:500}
+[hidden]{display:none!important}
+.legal-foot{margin-top:20px;display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:12px;color:var(--muted);max-width:420px}
+.legal-foot a{color:var(--muted);text-decoration:none}.legal-foot a:hover{color:var(--fg);text-decoration:underline}
+.planbadge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--border)}
+.planbadge.pro{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.btn-row{display:grid;gap:10px}
+a.btn{text-decoration:none}
+@media (max-width:420px){
+  .card{padding:20px;border-radius:12px}
+  .rules{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  body{justify-content:flex-start;padding-top:max(32px,env(safe-area-inset-top))}
+  input{font-size:16px} /* stops iOS zoom on focus */
+}
+@media (min-width:1024px){ .card{padding:28px} }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<main class="card" id="view-login" hidden>
+  <h1>Login</h1>
+  <p class="sub">Enter your email below to login to your account</p>
+  <form id="form-login" novalidate>
+    <div class="alert err" role="alert" data-alert></div>
+    <div class="field">
+      <label for="l-email">Email</label>
+      <input id="l-email" type="email" name="email" placeholder="m@example.com" autocomplete="username email" inputmode="email" autocapitalize="none" spellcheck="false" required>
+      <div class="hint" data-hint="email"></div>
+    </div>
+    <div class="field">
+      <div class="row">
+        <label for="l-pass">Password</label>
+        <button type="button" class="link" data-go="forgot">Forgot your password?</button>
+      </div>
+      <div class="pw">
+        <input id="l-pass" type="password" name="password" autocomplete="current-password" required>
+        <button type="button" class="eye" aria-label="Show password" data-eye></button>
+      </div>
+      <div class="hint" data-hint="password"></div>
+    </div>
+    <button class="btn primary" type="submit">Login</button>
+    <button class="btn" type="button" data-google><span data-gicon></span>Login with Google</button>
+  </form>
+  <p class="foot">Don't have an account? <a href="?v=signup" data-go="signup">Sign up</a></p>
+</main>
+
+<!-- ============ SIGN UP ============ -->
+<main class="card" id="view-signup" hidden>
+  <h1>Sign up</h1>
+  <p class="sub">Create your account to get started</p>
+  <form id="form-signup" novalidate>
+    <div class="alert err" role="alert" data-alert></div>
+    <div class="field">
+      <label for="s-name">Full name</label>
+      <input id="s-name" type="text" name="name" placeholder="John Doe" autocomplete="name" required>
+      <div class="hint" data-hint="name"></div>
+    </div>
+    <div class="field">
+      <label for="s-email">Email</label>
+      <input id="s-email" type="email" name="email" placeholder="m@example.com" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required>
+      <div class="hint" data-hint="email"></div>
+    </div>
+    <div class="field">
+      <label for="s-pass">Password</label>
+      <div class="pw">
+        <input id="s-pass" type="password" name="password" autocomplete="new-password" required>
+        <button type="button" class="eye" aria-label="Show password" data-eye></button>
+      </div>
+      <div class="meter" data-meter><i></i><i></i><i></i><i></i></div>
+      <ul class="rules" data-rules>
+        <li data-r="len">8+ characters</li>
+        <li data-r="up">Uppercase letter</li>
+        <li data-r="lo">Lowercase letter</li>
+        <li data-r="num">A number</li>
+        <li data-r="sym">A special character</li>
+      </ul>
+      <div class="hint" data-hint="password"></div>
+    </div>
+    <div class="field">
+      <label for="s-conf">Confirm password</label>
+      <div class="pw">
+        <input id="s-conf" type="password" name="confirm" autocomplete="new-password" required>
+        <button type="button" class="eye" aria-label="Show password" data-eye></button>
+      </div>
+      <div class="hint" data-hint="confirm"></div>
+    </div>
+    <button class="btn primary" type="submit">Create account</button>
+    <button class="btn" type="button" data-google><span data-gicon></span>Sign up with Google</button>
+  </form>
+  <p class="foot">Already have an account? <a href="?v=login" data-go="login">Login</a></p>
+</main>
+
+<!-- ============ FORGOT PASSWORD ============ -->
+<main class="card" id="view-forgot" hidden>
+  <h1>Forgot password?</h1>
+  <p class="sub">Enter your email and we'll send you a link to reset your password</p>
+  <form id="form-forgot" novalidate>
+    <div class="alert err" role="alert" data-alert></div>
+    <div class="alert ok" role="status" data-ok></div>
+    <div class="field">
+      <label for="f-email">Email</label>
+      <input id="f-email" type="email" name="email" placeholder="m@example.com" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required>
+      <div class="hint" data-hint="email"></div>
+    </div>
+    <button class="btn primary" type="submit">Send reset link</button>
+  </form>
+  <p class="foot">Remembered it? <a href="?v=login" data-go="login">Back to login</a></p>
+</main>
+
+<!-- ============ RESET PASSWORD (opened from email link) ============ -->
+<main class="card" id="view-reset" hidden>
+  <h1>Set a new password</h1>
+  <p class="sub">Choose a strong password for your account</p>
+  <form id="form-reset" novalidate>
+    <div class="alert err" role="alert" data-alert></div>
+    <div class="field">
+      <label for="r-pass">New password</label>
+      <div class="pw">
+        <input id="r-pass" type="password" name="password" autocomplete="new-password" required>
+        <button type="button" class="eye" aria-label="Show password" data-eye></button>
+      </div>
+      <div class="meter" data-meter><i></i><i></i><i></i><i></i></div>
+      <ul class="rules" data-rules>
+        <li data-r="len">8+ characters</li>
+        <li data-r="up">Uppercase letter</li>
+        <li data-r="lo">Lowercase letter</li>
+        <li data-r="num">A number</li>
+        <li data-r="sym">A special character</li>
+      </ul>
+      <div class="hint" data-hint="password"></div>
+    </div>
+    <div class="field">
+      <label for="r-conf">Confirm new password</label>
+      <div class="pw">
+        <input id="r-conf" type="password" name="confirm" autocomplete="new-password" required>
+        <button type="button" class="eye" aria-label="Show password" data-eye></button>
+      </div>
+      <div class="hint" data-hint="confirm"></div>
+    </div>
+    <button class="btn primary" type="submit">Update password</button>
+  </form>
+</main>
+
+<!-- ============ CHECK EMAIL ============ -->
+<main class="card center" id="view-check" hidden>
+  <div class="icon-big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>
+  <h1>Check your email</h1>
+  <p class="sub" id="check-text"></p>
+  <div class="alert err" role="alert" data-alert style="text-align:left"></div>
+  <div class="alert ok" role="status" data-ok style="text-align:left;margin-bottom:12px"></div>
+  <button class="btn" type="button" id="btn-resend">Resend confirmation email</button>
+  <p class="foot"><a href="?v=login" data-go="login">Back to login</a></p>
+</main>
+
+<!-- ============ DASHBOARD (after login) ============ -->
+<main class="card" id="view-app" hidden>
+  <h1>You're signed in</h1>
+  <div class="profile">
+    <div class="avatar" id="p-avatar"></div>
+    <div style="min-width:0">
+      <div class="pname" id="p-name"></div>
+      <div class="pmail" id="p-email"></div>
+    </div>
+  </div>
+  <div class="meta">
+    <div>Login methods: <b id="p-prov"></b></div>
+    <div>Member since: <b id="p-since"></b></div>
+    <div>Plan: <span class="planbadge" id="p-plan">Free</span> <span id="p-plan-end"></span></div>
+  </div>
+  <div class="btn-row">
+    <a class="btn primary" id="btn-upgrade" href="pricing.html">Upgrade to Pro</a>
+    <button class="btn" type="button" id="btn-logout">Log out</button>
+  </div>
+</main>
+
+<nav class="legal-foot" aria-label="Legal">
+  <a href="pricing.html">Pricing</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a>
+  <a href="refund.html">Refunds</a><a href="delivery.html">Delivery</a><a href="contact.html">Contact</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+  "use strict";
+  const CFG = window.APP_CONFIG || {};
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+  const configured = CFG.SUPABASE_URL && !CFG.SUPABASE_URL.includes("YOUR-PROJECT");
+  if (!configured) {
+    document.body.innerHTML = '<main class="card"><h1>Setup needed</h1><p class="sub" style="margin-bottom:0">Open <b>config.js</b> and paste your Supabase URL and anon key.</p></main>';
+    return;
+  }
+
+  // Detect a password-recovery / error redirect BEFORE supabase-js cleans the URL.
+  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const queryParams = new URLSearchParams(location.search);
+  let recoveryMode = hashParams.get("type") === "recovery";
+  const linkError = hashParams.get("error_description") || queryParams.get("error_description");
+
+  const sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+
+  /* ---------- icons ---------- */
+  const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/><path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"/></svg>';
+  const GOOGLE = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l3.66-2.83Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>';
+  $$("[data-eye]").forEach(b => (b.innerHTML = EYE));
+  $$("[data-gicon]").forEach(s => (s.innerHTML = GOOGLE));
+
+  /* ---------- helpers ---------- */
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const rules = {
+    len: p => p.length >= 8,
+    up:  p => /[A-Z]/.test(p),
+    lo:  p => /[a-z]/.test(p),
+    num: p => /\d/.test(p),
+    sym: p => /[^A-Za-z0-9]/.test(p)
+  };
+  const passwordOk = p => Object.values(rules).every(f => f(p));
+  const normEmail = e => e.trim().toLowerCase();
+
+  function showAlert(root, kind, msg) {
+    const el = $(kind === "ok" ? "[data-ok]" : "[data-alert]", root);
+    if (!el) return;
+    if (kind === "err") { const o = $("[data-ok]", root); if (o) o.classList.remove("show"); }
+    if (kind === "ok")  { const e = $("[data-alert]", root); if (e) e.classList.remove("show"); }
+    el.textContent = msg; el.classList.add("show");
+  }
+  function clearAlerts(root) { $$("[data-alert],[data-ok]", root).forEach(a => a.classList.remove("show")); $$(".hint", root).forEach(h => h.classList.remove("show")); $$("input", root).forEach(i => i.removeAttribute("aria-invalid")); }
+  function fieldError(root, name, msg) {
+    const h = $(`[data-hint="${name}"]`, root); const i = $(`[name="${name}"]`, root);
+    if (h) { h.textContent = msg; h.classList.add("show"); }
+    if (i) i.setAttribute("aria-invalid", "true");
+  }
+  function busy(btn, on, label) {
+    if (on) { btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + (label || ""); }
+    else { btn.disabled = false; btn.innerHTML = btn.dataset.label || btn.innerHTML; }
+  }
+
+  // show/hide password
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-eye]"); if (!b) return;
+    const inp = $("input", b.parentElement); const show = inp.type === "password";
+    inp.type = show ? "text" : "password";
+    b.innerHTML = show ? EYE_OFF : EYE; b.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+
+  // live strength meter + rules
+  function wireStrength(form) {
+    const pass = $('input[name="password"]', form); const meter = $$("[data-meter] i", form);
+    const items = $$("[data-rules] li", form); if (!pass || !meter.length) return;
+    const colors = ["#ef4444", "#f59e0b", "#eab308", "#22c55e"];
+    pass.addEventListener("input", () => {
+      const p = pass.value; let score = 0;
+      items.forEach(li => { const ok = rules[li.dataset.r](p); li.classList.toggle("ok", ok); if (ok) score++; });
+      const level = p ? Math.max(1, Math.min(4, score - (score === 5 ? 1 : 0))) : 0;
+      meter.forEach((m, i) => (m.style.background = i < level ? colors[level - 1] : ""));
+    });
+  }
+  wireStrength($("#form-signup")); wireStrength($("#form-reset"));
+
+  /* ---------- views / routing ---------- */
+  const views = ["login", "signup", "forgot", "reset", "check", "app"];
+  const titles = { login: "Login", signup: "Sign up", forgot: "Forgot password", reset: "Reset password", check: "Check your email", app: "Account" };
+  function show(name, push = true) {
+    views.forEach(v => ($("#view-" + v).hidden = v !== name));
+    document.title = titles[name] + (CFG.APP_NAME ? " · " + CFG.APP_NAME : "");
+    if (push && ["login", "signup", "forgot"].includes(name)) {
+      history.pushState({ v: name }, "", name === "login" ? location.pathname : "?v=" + name);
+    }
+    const first = $("#view-" + name + " input"); if (first && window.innerWidth > 700) first.focus();
+  }
+  document.addEventListener("click", e => {
+    const t = e.target.closest("[data-go]"); if (!t) return;
+    e.preventDefault(); show(t.dataset.go);
+  });
+  window.addEventListener("popstate", () => show(viewFromUrl(), false));
+  function viewFromUrl() { const v = new URLSearchParams(location.search).get("v"); return ["signup", "forgot"].includes(v) ? v : "login"; }
+
+  /* ---------- error messages ---------- */
+  function friendly(err) {
+    const m = (err && err.message || "").toLowerCase(); const code = err && err.code;
+    if (code === "email_not_confirmed" || m.includes("not confirmed")) return "Please confirm your email first. Check your inbox for the confirmation link.";
+    if (m.includes("invalid login")) return "Invalid email or password. If you signed up with Google, use “Login with Google”.";
+    if (m.includes("rate limit") || code === "over_email_send_rate_limit" || err.status === 429) return "Too many attempts. Please wait a few minutes and try again.";
+    if (m.includes("same password") ) return "New password must be different from your old password.";
+    if (m.includes("weak") || m.includes("password should")) return "Password is too weak. Use 8+ characters with upper, lower, number and symbol.";
+    if (m.includes("failed to fetch") || m.includes("network")) return "Network error. Check your internet connection and try again.";
+    if (m.includes("expired") || m.includes("invalid") && m.includes("token")) return "This link has expired or was already used. Please request a new one.";
+    return err && err.message ? err.message : "Something went wrong. Please try again.";
+  }
+
+  /* ---------- LOGIN ---------- */
+  const fLogin = $("#form-login");
+  fLogin.addEventListener("submit", async e => {
+    e.preventDefault(); clearAlerts(fLogin);
+    const email = normEmail(fLogin.email.value), password = fLogin.password.value; let bad = false;
+    if (!EMAIL_RE.test(email)) { fieldError(fLogin, "email", "Enter a valid email address."); bad = true; }
+    if (!password) { fieldError(fLogin, "password", "Enter your password."); bad = true; }
+    if (bad) return;
+    const btn = $('button[type="submit"]', fLogin); busy(btn, true, " Logging in…");
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    busy(btn, false);
+    if (error) {
+      if (error.code === "email_not_confirmed") { pendingEmail = email; return showCheck("Your email isn't confirmed yet. We sent a confirmation link to " + email + "."); }
+      return showAlert(fLogin, "err", friendly(error));
+    }
+    fLogin.reset(); // onAuthStateChange moves to the app
+  });
+
+  /* ---------- SIGN UP (new users only) ---------- */
+  let pendingEmail = "";
+  const fSign = $("#form-signup");
+  fSign.addEventListener("submit", async e => {
+    e.preventDefault(); clearAlerts(fSign);
+    const name = fSign.name.value.trim(), email = normEmail(fSign.email.value), pass = fSign.password.value, conf = fSign.confirm.value; let bad = false;
+    if (name.length < 2) { fieldError(fSign, "name", "Enter your full name."); bad = true; }
+    if (!EMAIL_RE.test(email)) { fieldError(fSign, "email", "Enter a valid email address."); bad = true; }
+    if (!passwordOk(pass)) { fieldError(fSign, "password", "Password doesn't meet all the requirements."); bad = true; }
+    if (pass !== conf) { fieldError(fSign, "confirm", "Passwords do not match."); bad = true; }
+    if (bad) return;
+    const btn = $('button[type="submit"]', fSign); busy(btn, true, " Creating account…");
+    const { data, error } = await sb.auth.signUp({
+      email, password: pass,
+      options: { data: { full_name: name }, emailRedirectTo: location.origin + location.pathname }
+    });
+    busy(btn, false);
+    if (error) return showAlert(fSign, "err", friendly(error));
+    // Supabase returns a user with NO identities when the email already exists.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return showAlert(fSign, "err", "An account with this email already exists. Please log in" + " (or use “Sign up with Google” if you registered that way).");
+    }
+    fSign.reset(); $$("[data-rules] li", fSign).forEach(l => l.classList.remove("ok")); $$("[data-meter] i", fSign).forEach(m => (m.style.background = ""));
+    if (!data.session) { pendingEmail = email; showCheck("We sent a confirmation link to " + email + ". Click it to activate your account, then log in."); }
+  });
+
+  function showCheck(text) {
+    $("#check-text").textContent = text;
+    clearAlerts($("#view-check")); show("check", false);
+  }
+  $("#btn-resend").addEventListener("click", async e => {
+    const root = $("#view-check"); clearAlerts(root);
+    if (!pendingEmail) return showAlert(root, "err", "Please sign up again to receive a new email.");
+    busy(e.currentTarget, true, " Sending…");
+    const { error } = await sb.auth.resend({ type: "signup", email: pendingEmail, options: { emailRedirectTo: location.origin + location.pathname } });
+    busy(e.currentTarget, false);
+    error ? showAlert(root, "err", friendly(error)) : showAlert(root, "ok", "Confirmation email sent again.");
+  });
+
+  /* ---------- FORGOT PASSWORD ---------- */
+  const fForgot = $("#form-forgot");
+  fForgot.addEventListener("submit", async e => {
+    e.preventDefault(); clearAlerts(fForgot);
+    const email = normEmail(fForgot.email.value);
+    if (!EMAIL_RE.test(email)) return fieldError(fForgot, "email", "Enter a valid email address.");
+    const btn = $('button[type="submit"]', fForgot); busy(btn, true, " Sending…");
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    busy(btn, false);
+    if (error && (error.status === 429 || /rate/i.test(error.message))) return showAlert(fForgot, "err", friendly(error));
+    // Same message whether or not the email exists (prevents account enumeration).
+    showAlert(fForgot, "ok", "If an account exists for " + email + ", a password reset link has been sent. Check your inbox (and spam folder).");
+  });
+
+  /* ---------- RESET PASSWORD ---------- */
+  const fReset = $("#form-reset");
+  fReset.addEventListener("submit", async e => {
+    e.preventDefault(); clearAlerts(fReset);
+    const pass = fReset.password.value, conf = fReset.confirm.value; let bad = false;
+    if (!passwordOk(pass)) { fieldError(fReset, "password", "Password doesn't meet all the requirements."); bad = true; }
+    if (pass !== conf) { fieldError(fReset, "confirm", "Passwords do not match."); bad = true; }
+    if (bad) return;
+    const btn = $('button[type="submit"]', fReset); busy(btn, true, " Updating…");
+    const { error } = await sb.auth.updateUser({ password: pass });
+    busy(btn, false);
+    if (error) return showAlert(fReset, "err", friendly(error));
+    recoveryMode = false; fReset.reset();
+    await loadApp(); show("app", false);
+  });
+
+  /* ---------- GOOGLE (same email => same user, linked by Supabase) ---------- */
+  $$("[data-google]").forEach(b => b.addEventListener("click", async () => {
+    const form = b.closest("form"); clearAlerts(form); busy(b, true, " Redirecting…");
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: "select_account" } }
+    });
+    if (error) { busy(b, false); $$("[data-gicon]", b).forEach(s => (s.innerHTML = GOOGLE)); showAlert(form, "err", friendly(error)); }
+  }));
+
+  /* ---------- APP / PROFILE ---------- */
+  async function loadApp() {
+    const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+    const { data: prof } = await sb.from("profiles").select("full_name,avatar_url,providers,created_at").eq("id", user.id).maybeSingle();
+    const name = (prof && prof.full_name) || user.user_metadata.full_name || user.user_metadata.name || user.email.split("@")[0];
+    const avatar = (prof && prof.avatar_url) || user.user_metadata.avatar_url || user.user_metadata.picture;
+    $("#p-name").textContent = name; $("#p-email").textContent = user.email;
+    const av = $("#p-avatar"); av.textContent = "";
+    if (avatar) { const img = new Image(); img.alt = ""; img.referrerPolicy = "no-referrer"; img.src = avatar; av.appendChild(img); }
+    else av.textContent = name.trim().charAt(0).toUpperCase();
+    const provs = ((prof && prof.providers && prof.providers.length) ? prof.providers : (user.app_metadata.providers || [])).map(p => p === "email" ? "Email & password" : p.charAt(0).toUpperCase() + p.slice(1));
+    $("#p-prov").textContent = provs.join(" + ") || "—";
+    try {
+      const { data: sub } = await sb.from("subscriptions").select("status,current_period_end").maybeSingle();
+      const active = sub && sub.status === "active" && new Date(sub.current_period_end) > new Date();
+      const pb = $("#p-plan"); pb.textContent = active ? "Pro" : "Free"; pb.classList.toggle("pro", !!active);
+      $("#p-plan-end").textContent = active ? "until " + new Date(sub.current_period_end).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+      $("#btn-upgrade").textContent = active ? "Manage / extend Pro" : "Upgrade to Pro";
+    } catch (_) {}
+    $("#p-since").textContent = new Date((prof && prof.created_at) || user.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  }
+  $("#btn-logout").addEventListener("click", async () => { await sb.auth.signOut(); });
+
+  /* ---------- auth state ---------- */
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") { recoveryMode = true; show("reset", false); return; }
+    if (event === "SIGNED_OUT") { show("login", false); history.replaceState({}, "", location.pathname); return; }
+    if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") && session && !recoveryMode) {
+      setTimeout(async () => {
+        let next = null;
+        try { next = sessionStorage.getItem("postLoginRedirect"); if (next) sessionStorage.removeItem("postLoginRedirect"); } catch (_) {}
+        if (next && /^[a-z0-9_-]+\.html$/i.test(next)) { location.replace(next); return; }
+        await loadApp(); show("app", false); if (location.search) history.replaceState({}, "", location.pathname);
+      }, 0);
+    }
+  });
+
+  /* ---------- boot ---------- */
+  (async () => {
+    if (recoveryMode) { show("reset", false); return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) return; // onAuthStateChange shows the app
+    show(viewFromUrl(), false);
+    if (linkError) {
+      const msg = /expired|invalid/i.test(linkError) ? "That link has expired or was already used. Request a new one below." : linkError.replace(/\+/g, " ");
+      show("forgot", false); showAlert(fForgot, "err", msg);
+      history.replaceState({}, "", location.pathname);
+    }
+  })();
+})();
+</script>
+</body>
+</html>

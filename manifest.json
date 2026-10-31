@@ -1,0 +1,21 @@
+{
+  "name": "PipeSpec Piping Reference & 3D Viewer",
+  "short_name": "PipeSpec",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "./Pipespec.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./3D Model/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
