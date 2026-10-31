@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>My profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --page:#fafafa; --fg:#09090b; --muted:#71717a; --border:#e4e4e7; --input:#e4e4e7;
+  --primary:#18181b; --primary-fg:#fafafa; --ring:rgba(24,24,27,.15); --hover:#f4f4f5;
+  --danger:#dc2626; --danger-bg:#fef2f2; --ok:#15803d; --ok-bg:#f0fdf4; --warn:#b45309; --warn-bg:#fffbeb;
+  --gold1:#f6c453; --gold2:#f08a24; --gold-fg:#3b2400;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0c0c0f; --page:#09090b; --fg:#fafafa; --muted:#a1a1aa; --border:#27272a; --input:#27272a;
+    --primary:#fafafa; --primary-fg:#18181b; --ring:rgba(250,250,250,.18); --hover:#18181b;
+    --danger:#f87171; --danger-bg:#2a1214; --ok:#4ade80; --ok-bg:#0f2417; --warn:#fbbf24; --warn-bg:#271c05;
+  }
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--page);color:var(--fg);font-size:14px;line-height:1.5;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+a{color:inherit}
+.wrap{width:100%;max-width:760px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+header{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.nav{display:flex;align-items:center;justify-content:space-between;height:58px;gap:12px}
+.brand{font-weight:700;font-size:16px;text-decoration:none;letter-spacing:-.01em}
+.nav-r{display:flex;gap:8px;align-items:center}
+.nbtn{height:34px;padding:0 14px;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--fg);font:inherit;font-weight:500;font-size:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.nbtn:hover{background:var(--hover)}
+.nbtn svg{width:15px;height:15px}
+main{flex:1;padding:28px 0 20px;display:grid;gap:16px;align-content:start}
+h1.page{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-sub{color:var(--muted);margin-top:2px}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:22px}
+.card h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.card .hd p{color:var(--muted);font-size:13px;margin-top:2px}
+
+/* ---------- hero ---------- */
+.hero{display:flex;gap:20px;align-items:center}
+.av-col{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
+.av-wrap{position:relative;width:104px;height:104px}
+.av{width:104px;height:104px;border-radius:50%;background:var(--primary);color:var(--primary-fg);display:grid;place-items:center;font-size:38px;font-weight:600;overflow:hidden;border:3px solid var(--bg)}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av-wrap.pro::before{content:"";position:absolute;inset:-4px;border-radius:50%;background:linear-gradient(135deg,var(--gold1),var(--gold2));z-index:0}
+.av-wrap .av{position:relative;z-index:1}
+.cam{position:absolute;right:0;bottom:2px;z-index:2;width:34px;height:34px;border-radius:50%;border:3px solid var(--bg);background:var(--primary);color:var(--primary-fg);display:grid;place-items:center;cursor:pointer}
+.cam svg{width:15px;height:15px}
+.cam:hover{opacity:.9}
+.av-busy{position:absolute;inset:0;border-radius:50%;z-index:3;background:rgba(0,0,0,.45);display:none;place-items:center}
+.av-busy.on{display:grid}
+.linkbtn{background:none;border:0;font:inherit;font-size:12px;color:var(--muted);cursor:pointer;padding:2px 4px;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--fg)}
+.linkbtn:disabled{opacity:.5;cursor:not-allowed}
+.who{min-width:0}
+.who .nm{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.25;display:flex;align-items:center;gap:10px;flex-wrap:wrap;word-break:break-word}
+.who .em{color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;word-break:break-all}
+.chips{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+/* ---------- badges ---------- */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 10px;border-radius:999px;text-transform:uppercase;white-space:nowrap}
+.badge svg{width:12px;height:12px}
+.badge.free{background:var(--hover);color:var(--muted);border:1px solid var(--border)}
+.badge.pro{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:var(--gold-fg);box-shadow:0 1px 6px rgba(240,138,36,.35)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;border:1px solid var(--border);color:var(--fg);background:var(--bg)}
+.chip svg{width:13px;height:13px}
+.chip.ok{color:var(--ok);background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 28%,transparent)}
+.st{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;display:inline-block}
+.st.paid{background:var(--ok-bg);color:var(--ok)}
+.st.failed{background:var(--danger-bg);color:var(--danger)}
+.st.refunded{background:var(--warn-bg);color:var(--warn)}
+
+/* ---------- forms ---------- */
+form{display:grid;gap:16px}
+.field{display:grid;gap:7px}
+label{font-weight:500;font-size:14px}
+.inp{position:relative}
+input[type=text],input[type=password],input[type=email]{width:100%;height:42px;padding:0 12px;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--fg);font:inherit;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus-visible{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+input[aria-invalid="true"]{border-color:var(--danger)}
+input[readonly]{background:var(--hover);color:var(--muted);cursor:not-allowed;padding-right:110px}
+.inp .tag{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ok);font-weight:500;pointer-events:none}
+.inp .tag svg{width:14px;height:14px}
+.inp.pw input{padding-right:44px}
+.eye{position:absolute;right:3px;top:3px;width:36px;height:36px;border:0;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;display:grid;place-items:center}
+.eye:hover{color:var(--fg);background:var(--hover)}.eye svg{width:18px;height:18px}
+.help{color:var(--muted);font-size:12px}
+.err{color:var(--danger);font-size:12px;display:none}.err.show{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{height:42px;border-radius:9px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;border:1px solid var(--input);background:transparent;color:var(--fg);text-decoration:none;transition:background .15s,opacity .15s}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.btn.primary:hover{opacity:.9;background:var(--primary)}
+.btn.gold{background:linear-gradient(135deg,var(--gold1),var(--gold2));color:var(--gold-fg);border-color:transparent}
+.btn.gold:hover{opacity:.92;background:linear-gradient(135deg,var(--gold1),var(--gold2))}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn svg{width:16px;height:16px}
+.spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.av-busy .spinner{border-color:#fff;border-right-color:transparent;width:24px;height:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.meter{display:flex;gap:4px}.meter i{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .2s}
+.rules{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:12px;color:var(--muted)}
+.rules li::before{content:"○ "}.rules li.ok{color:var(--ok)}.rules li.ok::before{content:"● "}
+
+/* ---------- plan card ---------- */
+.plan{display:grid;gap:14px}
+.plan-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.plan-name{font-size:20px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.plan-sub{color:var(--muted);margin-top:2px}
+.bar{height:8px;border-radius:999px;background:var(--hover);border:1px solid var(--border);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold1),var(--gold2));transition:width .6s ease}
+.bar-l{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px}
+.perks{list-style:none;padding:0;display:grid;gap:8px}
+.perks li{display:flex;gap:10px;align-items:flex-start}
+.perks svg{width:17px;height:17px;flex:none;margin-top:1px;color:var(--ok)}
+.pro-card{border-color:color-mix(in srgb,var(--gold2) 55%,var(--border));background:linear-gradient(180deg,color-mix(in srgb,var(--gold1) 9%,var(--bg)),var(--bg) 60%)}
+.note-warn{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px}
+
+/* ---------- details ---------- */
+dl.det{display:grid;gap:0}
+dl.det .r{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--border);align-items:center}
+dl.det .r:last-child{border-bottom:0;padding-bottom:0}dl.det .r:first-child{padding-top:0}
+dl.det dt{color:var(--muted)}dl.det dd{font-weight:500;text-align:right;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center;min-width:0}
+.copy{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;font:inherit;font-size:12px;padding:2px 8px;cursor:pointer}
+.copy:hover{color:var(--fg);background:var(--hover)}
+
+/* ---------- billing ---------- */
+.bill{display:grid}
+.bill .h,.bill .r{display:grid;grid-template-columns:1.1fr 1.3fr .8fr .9fr .8fr;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.bill .h{color:var(--muted);font-size:12px;font-weight:500;padding-top:0}
+.bill .r:last-child{border-bottom:0;padding-bottom:0}
+.bill .r .amt{font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:22px 0 8px}
+.empty a{font-weight:600}
+
+/* ---------- toast & skeleton ---------- */
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--primary);color:var(--primary-fg);padding:11px 16px;border-radius:10px;font-weight:500;font-size:13px;max-width:calc(100vw - 32px);transition:all .25s;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--danger);color:#fff}
+.sk{background:linear-gradient(90deg,var(--hover),var(--border),var(--hover));background-size:200% 100%;animation:sh 1.2s infinite;border-radius:8px}
+@keyframes sh{to{background-position:-200% 0}}
+footer{border-top:1px solid var(--border);background:var(--bg);padding:18px 0 max(18px,env(safe-area-inset-bottom));margin-top:12px}
+.foot{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;color:var(--muted);font-size:13px}
+.foot a{text-decoration:none;color:var(--muted)}.foot a:hover{color:var(--fg);text-decoration:underline}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- responsive ---------- */
+@media (max-width:640px){
+  main{padding-top:20px}
+  .card{padding:18px}
+  .hero{flex-direction:column;text-align:center}
+  .who .nm{justify-content:center;font-size:20px}
+  .chips{justify-content:center}
+  .row2{grid-template-columns:1fr}
+  .rules{grid-template-columns:1fr}
+  .actions .btn{flex:1}
+  .bill .h{display:none}
+  .bill .r{grid-template-columns:1fr auto;grid-template-areas:"plan amt" "date st";gap:2px 10px}
+  .bill .r .c-plan{grid-area:plan;font-weight:600}.bill .r .c-amt{grid-area:amt;text-align:right}
+  .bill .r .c-date{grid-area:date;color:var(--muted);font-size:12px}.bill .r .c-st{grid-area:st;text-align:right}
+  .bill .r .c-method{display:none}
+  .nbtn span{display:none}
+  input[type=text],input[type=password],input[type=email]{font-size:16px}
+}
+@media (min-width:1024px){ .wrap{max-width:820px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" id="brand" href="index.html">Acme</a>
+    <div class="nav-r">
+      <a class="nbtn" href="pricing.html">Pricing</a>
+      <button class="nbtn" type="button" id="btn-logout-top" aria-label="Log out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span>Log out</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div>
+    <h1 class="page">My profile</h1>
+    <p class="page-sub">Manage your personal details, plan and security.</p>
+  </div>
+
+  <!-- ===== loading skeleton ===== -->
+  <div id="skeleton" class="card" aria-hidden="true">
+    <div style="display:flex;gap:18px;align-items:center"><div class="sk" style="width:104px;height:104px;border-radius:50%"></div><div style="flex:1;display:grid;gap:10px"><div class="sk" style="height:22px;width:50%"></div><div class="sk" style="height:14px;width:70%"></div></div></div>
+  </div>
+
+  <div id="content" hidden style="display:grid;gap:16px">
+
+    <!-- ===== HERO ===== -->
+    <section class="card hero" aria-label="Profile summary">
+      <div class="av-col">
+        <div class="av-wrap" id="av-wrap">
+          <div class="av" id="av"></div>
+          <div class="av-busy" id="av-busy"><span class="spinner"></span></div>
+          <button class="cam" type="button" id="btn-cam" aria-label="Change profile photo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+          <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sr" tabindex="-1">
+        </div>
+        <button class="linkbtn" type="button" id="btn-rm" hidden>Remove photo</button>
+      </div>
+      <div class="who">
+        <div class="nm"><span id="h-name"></span><span id="h-badge"></span></div>
+        <div class="em" id="h-email"></div>
+        <div class="chips" id="h-chips"></div>
+      </div>
+    </section>
+
+    <!-- ===== PLAN ===== -->
+    <section class="card" id="plan-card" aria-label="Your plan"></section>
+
+    <!-- ===== PERSONAL INFO ===== -->
+    <section class="card" aria-label="Personal information">
+      <div class="hd"><div><h2>Personal information</h2><p>Update your name. Your email is your login and cannot be changed here.</p></div></div>
+      <form id="form-info" novalidate>
+        <div class="field">
+          <label for="f-name">Full name</label>
+          <div class="inp"><input id="f-name" type="text" maxlength="80" placeholder="Add your name" autocomplete="name"></div>
+          <div class="err" id="e-name"></div>
+        </div>
+        <div class="field">
+          <label for="f-email">Email address</label>
+          <div class="inp">
+            <input id="f-email" type="email" readonly tabindex="-1" aria-describedby="h-email-help">
+            <span class="tag" id="verified" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Verified</span>
+          </div>
+          <div class="help" id="h-email-help">🔒 Email can’t be edited. Need to change it? <a href="contact.html">Contact support</a>.</div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="submit" id="btn-save" disabled>Save changes</button>
+          <button class="btn" type="button" id="btn-cancel" hidden>Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ===== ACCOUNT ===== -->
+    <section class="card" aria-label="Account details">
+      <div class="hd"><div><h2>Account details</h2></div></div>
+      <dl class="det">
+        <div class="r"><dt>Member since</dt><dd id="d-since">—</dd></div>
+        <div class="r"><dt>Login methods</dt><dd id="d-prov">—</dd></div>
+        <div class="r"><dt>Last sign-in</dt><dd id="d-last">—</dd></div>
+        <div class="r"><dt>Account ID</dt><dd><span id="d-id" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px"></span><button class="copy" type="button" id="btn-copy">Copy</button></dd></div>
+      </dl>
+    </section>
+
+    <!-- ===== SECURITY ===== -->
+    <section class="card" aria-label="Security">
+      <div class="hd"><div><h2 id="sec-title">Change password</h2><p id="sec-sub">Use a strong password you don’t use anywhere else.</p></div></div>
+      <form id="form-pass" novalidate>
+        <input type="email" autocomplete="username" id="pw-user" hidden>
+        <div class="row2">
+          <div class="field">
+            <label for="p-new">New password</label>
+            <div class="inp pw"><input id="p-new" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye aria-label="Show password"></button></div>
+          </div>
+          <div class="field">
+            <label for="p-conf">Confirm new password</label>
+            <div class="inp pw"><input id="p-conf" type="password" autocomplete="new-password"><button type="button" class="eye" data-eye aria-label="Show password"></button></div>
+          </div>
+        </div>
+        <div class="meter" id="meter"><i></i><i></i><i></i><i></i></div>
+        <ul class="rules" id="rules">
+          <li data-r="len">8+ characters</li><li data-r="up">Uppercase letter</li>
+          <li data-r="lo">Lowercase letter</li><li data-r="num">A number</li><li data-r="sym">A special character</li>
+        </ul>
+        <div class="err" id="e-pass"></div>
+        <div class="actions"><button class="btn" type="submit" id="btn-pass">Update password</button></div>
+      </form>
+    </section>
+
+    <!-- ===== BILLING ===== -->
+    <section class="card" aria-label="Billing history">
+      <div class="hd"><div><h2>Billing history</h2><p>Your payments for Pro.</p></div></div>
+      <div id="bill"></div>
+    </section>
+
+    <div class="actions" style="justify-content:center;margin-top:4px">
+      <button class="btn danger" type="button" id="btn-logout">Log out</button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav class="foot" aria-label="Legal">
+      <a href="pricing.html">Pricing</a><a href="terms.html">Terms</a><a href="privacy.html">Privacy</a>
+      <a href="refund.html">Refunds</a><a href="delivery.html">Delivery</a><a href="contact.html">Contact</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+  "use strict";
+  const CFG = window.APP_CONFIG || {};
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const CROWN = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg>';
+  const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.9 10.9 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/><path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"/></svg>';
+  const GOOGLE = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l3.66-2.83Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>';
+  const MAIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>';
+
+  $("#brand").textContent = CFG.APP_NAME || "Home";
+  document.title = "My profile" + (CFG.APP_NAME ? " · " + CFG.APP_NAME : "");
+  $$("[data-eye]").forEach(b => (b.innerHTML = EYE));
+
+  const configured = CFG.SUPABASE_URL && !CFG.SUPABASE_URL.includes("YOUR-PROJECT");
+  if (!configured) {
+    $("#skeleton").innerHTML = '<h2>Setup needed</h2><p class="help" style="margin-top:6px">Open <b>config.js</b> and add your Supabase URL and anon key.</p>';
+    return;
+  }
+  const sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+  /* ---------- helpers ---------- */
+  const state = { user: null, profile: null, sub: null, payments: [], savedName: "" };
+  const fmtDate = (d, withTime) => new Date(d).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric", ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}) });
+  const money = (minor, cur) => new Intl.NumberFormat(cur === "INR" ? "en-IN" : "en-US", { style: "currency", currency: cur, maximumFractionDigits: minor % 100 === 0 ? 0 : 2 }).format(minor / 100);
+  const initials = n => (n || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
+  const cleanName = v => v.replace(/\s+/g, " ").trim();
+  let toastT;
+  function toast(msg, isErr) {
+    const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (isErr ? " err" : "");
+    clearTimeout(toastT); toastT = setTimeout(() => (t.className = "toast" + (isErr ? " err" : "")), 3800);
+  }
+  function busy(btn, on, label) {
+    if (on) { btn.dataset.html = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>' + (label ? "<span>" + label + "</span>" : ""); }
+    else { btn.disabled = false; if (btn.dataset.html) btn.innerHTML = btn.dataset.html; }
+  }
+  const isActive = () => !!(state.sub && state.sub.status === "active" && new Date(state.sub.current_period_end) > new Date());
+  const planLabel = id => (id === "pro_yearly" ? "Pro Yearly" : id === "pro_monthly" ? "Pro Monthly" : "Pro");
+  const provName = p => (p === "email" ? "Email & password" : p === "google" ? "Google" : p.charAt(0).toUpperCase() + p.slice(1));
+
+  /* ---------- rendering ---------- */
+  function badgeHTML() { return isActive() ? `<span class="badge pro">${CROWN}Pro</span>` : `<span class="badge free">Free</span>`; }
+
+  function renderHero() {
+    const name = state.profile && state.profile.full_name;
+    const email = state.user.email || "";
+    const avatar = state.profile && state.profile.avatar_url;
+    const shown = name || (email ? email.split("@")[0] : "Your name");
+    $("#h-name").textContent = shown;
+    $("#h-badge").innerHTML = badgeHTML();
+    $("#h-email").textContent = email;
+    const av = $("#av"); av.textContent = "";
+    if (avatar) {
+      const img = new Image(); img.alt = "Profile photo"; img.referrerPolicy = "no-referrer";
+      img.onerror = () => { av.textContent = initials(shown); };
+      img.src = avatar; av.appendChild(img);
+    } else av.textContent = initials(shown);
+    $("#av-wrap").classList.toggle("pro", isActive());
+    $("#btn-rm").hidden = !avatar;
+    const chips = [];
+    if (state.user.email_confirmed_at) chips.push(`<span class="chip ok">${CHECK}Email verified</span>`);
+    $("#h-chips").innerHTML = chips.join("");
+  }
+
+  function renderPlan() {
+    const card = $("#plan-card");
+    const sub = state.sub;
+    if (isActive()) {
+      const end = new Date(sub.current_period_end), now = new Date();
+      const left = Math.max(0, Math.ceil((end - now) / 86400000));
+      const total = sub.plan_id === "pro_yearly" ? 365 : 31;
+      const pct = Math.max(4, Math.min(100, Math.round(left / total * 100)));
+      card.className = "card pro-card";
+      card.innerHTML = `
+        <div class="plan">
+          <div class="plan-top">
+            <div><div class="plan-name">${planLabel(sub.plan_id)} <span class="badge pro">${CROWN}Active</span></div>
+              <div class="plan-sub">Active until <b>${fmtDate(end)}</b> · pay again to extend, no auto-renewal</div></div>
+            <a class="btn gold" href="pricing.html">Extend Pro</a>
+          </div>
+          <div><div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+            <div class="bar-l"><span>${left} day${left === 1 ? "" : "s"} left</span><span>Ends ${fmtDate(end)}</span></div></div>
+          ${left <= 7 ? `<div class="note-warn">Your Pro plan ends soon. Extend it to keep your Pro features.</div>` : ""}
+        </div>`;
+    } else if (sub) {
+      card.className = "card";
+      card.innerHTML = `
+        <div class="plan">
+          <div class="plan-top">
+            <div><div class="plan-name">Free <span class="badge free">Current plan</span></div>
+              <div class="plan-sub">Your ${planLabel(sub.plan_id)} plan ended on <b>${fmtDate(sub.current_period_end)}</b>.</div></div>
+            <a class="btn gold" href="pricing.html">${CROWN.replace("<svg", '<svg width="16" height="16"')}Renew Pro</a>
+          </div>
+        </div>`;
+    } else {
+      card.className = "card";
+      card.innerHTML = `
+        <div class="plan">
+          <div class="plan-top">
+            <div><div class="plan-name">Free <span class="badge free">Current plan</span></div>
+              <div class="plan-sub">Upgrade to Pro to unlock more.</div></div>
+            <a class="btn gold" href="pricing.html">${CROWN.replace("<svg", '<svg width="16" height="16"')}Upgrade to Pro</a>
+          </div>
+          <ul class="perks">
+            <li>${CHECK}<span>Unlimited projects</span></li>
+            <li>${CHECK}<span>Advanced analytics</span></li>
+            <li>${CHECK}<span>Priority email support</span></li>
+          </ul>
+        </div>`;
+    }
+  }
+
+  function renderInfo() {
+    const nm = $("#f-name"); nm.value = (state.profile && state.profile.full_name) || "";
+    state.savedName = cleanName(nm.value);
+    $("#f-email").value = state.user.email || "";
+    $("#verified").hidden = !state.user.email_confirmed_at;
+    updateDirty();
+  }
+
+  function renderAccount() {
+    $("#d-since").textContent = fmtDate((state.profile && state.profile.created_at) || state.user.created_at);
+    const provs = (state.user.app_metadata && state.user.app_metadata.providers) || (state.profile && state.profile.providers) || [];
+    $("#d-prov").innerHTML = provs.length ? provs.map(p => `<span class="chip">${p === "google" ? GOOGLE : MAIL}${provName(p)}</span>`).join("") : "—";
+    $("#d-last").textContent = state.user.last_sign_in_at ? fmtDate(state.user.last_sign_in_at, true) : "—";
+    $("#d-id").textContent = state.user.id.slice(0, 8) + "…";
+    const hasPw = provs.includes("email");
+    $("#sec-title").textContent = hasPw ? "Change password" : "Set a password";
+    $("#sec-sub").textContent = hasPw ? "Use a strong password you don’t use anywhere else." : "You signed in with Google. Add a password to also log in with your email.";
+    $("#btn-pass").textContent = hasPw ? "Update password" : "Set password";
+    $("#pw-user").value = state.user.email || "";
+  }
+
+  function renderBilling() {
+    const box = $("#bill");
+    if (!state.payments.length) { box.innerHTML = `<p class="empty">No payments yet. <a href="pricing.html">See Pro plans</a></p>`; return; }
+    const methodName = m => ({ upi: "UPI", card: "Card", netbanking: "Netbanking", wallet: "Wallet" }[m] || (m ? m : "—"));
+    box.innerHTML = `<div class="bill"><div class="h"><span>Date</span><span>Plan</span><span>Method</span><span>Amount</span><span>Status</span></div>` +
+      state.payments.map(p => `<div class="r">
+        <span class="c-date">${fmtDate(p.paid_at || p.created_at)}</span>
+        <span class="c-plan">${planLabel(p.plan_id)}</span>
+        <span class="c-method">${methodName(p.method)}</span>
+        <span class="c-amt amt">${money(p.amount, p.currency)}</span>
+        <span class="c-st"><span class="st ${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span></span>
+      </div>`).join("") + `</div>`;
+  }
+
+  function renderAll() { renderHero(); renderPlan(); renderInfo(); renderAccount(); renderBilling(); }
+
+  /* ---------- load ---------- */
+  async function load() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { try { sessionStorage.setItem("postLoginRedirect", "profile.html"); } catch (_) {} location.replace("index.html"); return; }
+    const { data: { user }, error: uerr } = await sb.auth.getUser();
+    if (uerr || !user) { await sb.auth.signOut(); location.replace("index.html"); return; }
+    state.user = user;
+
+    const [pr, sb1, pays] = await Promise.all([
+      sb.from("profiles").select("full_name,avatar_url,providers,created_at").eq("id", user.id).maybeSingle(),
+      sb.from("subscriptions").select("plan_id,status,current_period_end").maybeSingle(),
+      sb.from("payments").select("plan_id,amount,currency,status,method,created_at,paid_at").neq("status", "created").order("created_at", { ascending: false }).limit(25)
+    ]);
+    const meta = user.user_metadata || {};
+    state.profile = pr.data || { full_name: meta.full_name || meta.name || "", avatar_url: meta.avatar_url || meta.picture || null, created_at: user.created_at };
+    state.sub = sb1.data || null;
+    state.payments = pays.data || [];
+    renderAll();
+    $("#skeleton").hidden = true; $("#content").hidden = false;
+    if (pr.error) toast("Profile table not found. Run profile.sql / schema.sql first.", true);
+  }
+
+  /* ---------- name ---------- */
+  const nameInp = $("#f-name");
+  function validName(v) { return v.length >= 2 && v.length <= 80; }
+  function updateDirty() {
+    const v = cleanName(nameInp.value), dirty = v !== state.savedName;
+    $("#btn-save").disabled = !dirty; $("#btn-cancel").hidden = !dirty;
+  }
+  nameInp.addEventListener("input", () => { $("#e-name").classList.remove("show"); nameInp.removeAttribute("aria-invalid"); updateDirty(); });
+  $("#btn-cancel").addEventListener("click", () => { nameInp.value = state.savedName; updateDirty(); });
+  $("#form-info").addEventListener("submit", async e => {
+    e.preventDefault();
+    const v = cleanName(nameInp.value), err = $("#e-name");
+    if (!validName(v)) { err.textContent = "Please enter your name (2–80 characters)."; err.classList.add("show"); nameInp.setAttribute("aria-invalid", "true"); return; }
+    const btn = $("#btn-save"); busy(btn, true, "Saving…");
+    const { data, error } = await sb.from("profiles").update({ full_name: v }).eq("id", state.user.id).select("full_name").maybeSingle();
+    busy(btn, false);
+    if (error || !data) { toast("Could not save your name. Please try again.", true); btn.disabled = false; return; }
+    state.profile.full_name = data.full_name; state.savedName = data.full_name; nameInp.value = data.full_name;
+    renderHero(); updateDirty(); toast("Name updated ✓");
+  });
+
+  /* ---------- photo ---------- */
+  const fileInp = $("#file");
+  $("#btn-cam").addEventListener("click", () => fileInp.click());
+  $("#av").addEventListener("click", () => fileInp.click());
+  $("#av").style.cursor = "pointer";
+
+  // Center-crop to a square, shrink to 384px, re-encode as JPEG (also strips location/EXIF data).
+  function toSquareJpeg(file, size = 384) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const s = Math.min(img.naturalWidth, img.naturalHeight), sx = (img.naturalWidth - s) / 2, sy = (img.naturalHeight - s) / 2;
+        const c = document.createElement("canvas"); c.width = c.height = size;
+        const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, size, size);
+        ctx.imageSmoothingQuality = "high"; ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => (b ? resolve(b) : reject(new Error("encode"))), "image/jpeg", 0.88);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+      img.src = url;
+    });
+  }
+  function setAvBusy(on) { $("#av-busy").classList.toggle("on", on); $("#btn-cam").disabled = on; $("#btn-rm").disabled = on; }
+
+  fileInp.addEventListener("change", async () => {
+    const f = fileInp.files && fileInp.files[0]; fileInp.value = "";
+    if (!f) return;
+    if (!/^image\//.test(f.type)) return toast("Please choose an image file (JPG, PNG or WebP).", true);
+    if (f.size > 10 * 1024 * 1024) return toast("That image is too large. Please pick one under 10 MB.", true);
+    setAvBusy(true);
+    try {
+      const blob = await toSquareJpeg(f);
+      const path = state.user.id + "/avatar.jpg";
+      const up = await sb.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg", cacheControl: "3600" });
+      if (up.error) throw up.error;
+      const url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl + "?v=" + Date.now();
+      const { error } = await sb.from("profiles").update({ avatar_url: url }).eq("id", state.user.id);
+      if (error) throw error;
+      state.profile.avatar_url = url; renderHero(); toast("Profile photo updated ✓");
+    } catch (e) {
+      const m = String(e && e.message || "");
+      toast(m === "decode" ? "We couldn't read that image. Try a JPG or PNG." : /bucket|not found/i.test(m) ? "Photo storage isn't set up yet. Run profile.sql." : "Could not upload your photo. Please try again.", true);
+    } finally { setAvBusy(false); }
+  });
+
+  $("#btn-rm").addEventListener("click", async () => {
+    if (!confirm("Remove your profile photo?")) return;
+    setAvBusy(true);
+    try {
+      await sb.storage.from("avatars").remove([state.user.id + "/avatar.jpg"]);
+      const { error } = await sb.from("profiles").update({ avatar_url: null }).eq("id", state.user.id);
+      if (error) throw error;
+      state.profile.avatar_url = null; renderHero(); toast("Photo removed");
+    } catch (_) { toast("Could not remove the photo. Please try again.", true); }
+    finally { setAvBusy(false); }
+  });
+
+  /* ---------- password ---------- */
+  const rules = { len: p => p.length >= 8, up: p => /[A-Z]/.test(p), lo: p => /[a-z]/.test(p), num: p => /\d/.test(p), sym: p => /[^A-Za-z0-9]/.test(p) };
+  const passOk = p => Object.values(rules).every(f => f(p));
+  $("#p-new").addEventListener("input", e => {
+    const p = e.target.value; let score = 0;
+    $$("#rules li").forEach(li => { const ok = rules[li.dataset.r](p); li.classList.toggle("ok", ok); if (ok) score++; });
+    const level = p ? Math.max(1, Math.min(4, score - (score === 5 ? 1 : 0))) : 0, colors = ["#ef4444", "#f59e0b", "#eab308", "#22c55e"];
+    $$("#meter i").forEach((m, i) => (m.style.background = i < level ? colors[level - 1] : ""));
+  });
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-eye]"); if (!b) return;
+    const inp = $("input", b.parentElement), show = inp.type === "password";
+    inp.type = show ? "text" : "password"; b.innerHTML = show ? EYE_OFF : EYE; b.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+  $("#form-pass").addEventListener("submit", async e => {
+    e.preventDefault();
+    const np = $("#p-new").value, cf = $("#p-conf").value, err = $("#e-pass"); err.classList.remove("show");
+    if (!passOk(np)) { err.textContent = "Password doesn't meet all the requirements."; return err.classList.add("show"); }
+    if (np !== cf) { err.textContent = "Passwords do not match."; return err.classList.add("show"); }
+    const btn = $("#btn-pass"); busy(btn, true, "Updating…");
+    const { error } = await sb.auth.updateUser({ password: np });
+    busy(btn, false);
+    if (error) {
+      const m = (error.message || "").toLowerCase();
+      err.textContent = /same password/.test(m) ? "New password must be different from your current password."
+        : (error.code === "reauthentication_needed" || /reauth/.test(m)) ? "For your security, please log out and log in again, then change your password."
+        : /weak|should be/.test(m) ? "That password is too weak. Try a longer one."
+        : "Could not update your password. Please try again.";
+      return err.classList.add("show");
+    }
+    e.target.reset(); $$("#rules li").forEach(l => l.classList.remove("ok")); $$("#meter i").forEach(m => (m.style.background = ""));
+    toast("Password updated ✓");
+    await load();
+  });
+
+  /* ---------- misc ---------- */
+  $("#btn-copy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(state.user.id); toast("Account ID copied"); } catch (_) { toast("Could not copy. Long-press to select instead.", true); }
+  });
+  async function logout() { await sb.auth.signOut(); location.replace("index.html"); }
+  $("#btn-logout").addEventListener("click", logout);
+  $("#btn-logout-top").addEventListener("click", logout);
+  sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") location.replace("index.html"); });
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && state.user && !isActive()) {   // e.g. returned from a UPI app
+      const { data } = await sb.from("subscriptions").select("plan_id,status,current_period_end").maybeSingle();
+      if (data && JSON.stringify(data) !== JSON.stringify(state.sub)) { state.sub = data; renderHero(); renderPlan(); }
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
