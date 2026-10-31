@@ -266,7 +266,7 @@ a.btn{text-decoration:none}
   <div class="meta">
     <div>Login methods: <b id="p-prov"></b></div>
     <div>Member since: <b id="p-since"></b></div>
-    <div>Plan: <span class="planbadge" id="p-plan">Free</span> <span id="p-plan-end"></span></div>
+    <div>Plan: <span class="planbadge" id="p-plan">Free Plan</span> <span id="p-plan-end"></span></div>
   </div>
   <div class="btn-row">
     <a class="btn primary" id="btn-upgrade" href="pricing.html">Upgrade to Pro</a>
@@ -506,7 +506,7 @@ a.btn{text-decoration:none}
     try {
       const { data: sub } = await sb.from("subscriptions").select("status,current_period_end").maybeSingle();
       const active = sub && sub.status === "active" && new Date(sub.current_period_end) > new Date();
-      const pb = $("#p-plan"); pb.textContent = active ? "Pro" : "Free"; pb.classList.toggle("pro", !!active);
+      const pb = $("#p-plan"); pb.textContent = active ? "Pro Plan" : "Free Plan"; pb.classList.toggle("pro", !!active);
       $("#p-plan-end").textContent = active ? "until " + new Date(sub.current_period_end).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
       $("#btn-upgrade").textContent = active ? "Manage / extend Pro" : "Upgrade to Pro";
     } catch (_) {}
@@ -523,6 +523,11 @@ a.btn{text-decoration:none}
         let next = null;
         try { next = sessionStorage.getItem("postLoginRedirect"); if (next) sessionStorage.removeItem("postLoginRedirect"); } catch (_) {}
         if (next && /^[a-z0-9_-]+\.html$/i.test(next)) { location.replace(next); return; }
+        // Sent here from the Pipespec app ("Upgrade to Pro" popup)? Go back to it after login.
+        try {
+          const t = +localStorage.getItem("ps_return_home");
+          if (t && Date.now() - t < 6 * 3600e3) { localStorage.removeItem("ps_return_home"); location.replace("../../index.html"); return; }
+        } catch (_) {}
         await loadApp(); show("app", false); if (location.search) history.replaceState({}, "", location.pathname);
       }, 0);
     }

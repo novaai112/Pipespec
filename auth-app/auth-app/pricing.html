@@ -110,10 +110,10 @@ footer{border-top:1px solid var(--border);padding:20px 0 max(20px,env(safe-area-
 
 <header>
   <div class="wrap nav">
-    <a class="brand" href="index.html" id="brand">Acme</a>
+    <a class="brand" href="../../index.html" id="brand">Acme</a>
     <div class="nav-r">
       <span id="who" style="color:var(--muted);font-size:13px" hidden></span>
-      <a class="pill-btn" id="nav-login" href="index.html">Login</a>
+      <a class="pill-btn" id="nav-login" href="login.html">Login</a>
     </div>
   </div>
 </header>
@@ -145,7 +145,7 @@ footer{border-top:1px solid var(--border);padding:20px 0 max(20px,env(safe-area-
       <div class="price"><span class="amt" id="free-amt">$0</span><span class="per">forever</span></div>
       <div class="subprice">No card required</div>
       <ul class="feat" id="feat-free"></ul>
-      <a class="btn" id="btn-free" href="index.html?v=signup">Get started free</a>
+      <a class="btn" id="btn-free" href="../../index.html">Get started free</a>
     </article>
 
     <!-- PRO -->
@@ -181,7 +181,7 @@ footer{border-top:1px solid var(--border);padding:20px 0 max(20px,env(safe-area-
       </div>
       <div class="pay-stack" id="pay-active" hidden>
         <button class="btn primary" type="button" id="btn-extend"><span>Add more time</span></button>
-        <a class="btn" href="index.html">Go to my account</a>
+        <a class="btn" href="profile.html">Go to my account</a>
       </div>
       <div class="secure">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -335,18 +335,27 @@ footer{border-top:1px solid var(--border);padding:20px 0 max(20px,env(safe-area-
     state.sub = null;
     const login = $("#nav-login"), who = $("#who");
     if (state.user) {
-      who.textContent = state.user.email; who.hidden = false; login.textContent = "Account";
+      who.textContent = state.user.email; who.hidden = false; login.textContent = "Account"; login.setAttribute("href", "profile.html");
       const { data } = await sb.from("subscriptions").select("plan_id,status,current_period_end").maybeSingle();
       state.sub = data || null;
-      $("#btn-free").textContent = "Current plan"; $("#btn-free").removeAttribute("href"); $("#btn-free").setAttribute("aria-disabled", "true");
-    } else { who.hidden = true; login.textContent = "Login"; }
+      $("#btn-free").textContent = "Continue with Free";
+    } else { who.hidden = true; login.textContent = "Login"; login.setAttribute("href", "login.html"); }
   }
 
   /* ---------- payment ---------- */
   let paying = false;
   function goLogin() {
     try { sessionStorage.setItem("postLoginRedirect", "pricing.html"); } catch (_) {}
-    location.href = "index.html";
+    location.href = "login.html";
+  }
+  // The main site (index.html) sets this flag when it sends someone here to upgrade.
+  // After a VERIFIED payment we send them back so the Pro features are open straight away.
+  function cameFromApp() {
+    try { const t = +localStorage.getItem("ps_return_home"); return t && Date.now() - t < 6 * 3600e3; } catch (_) { return false; }
+  }
+  function backToApp() {
+    try { localStorage.removeItem("ps_return_home"); } catch (_) {}
+    location.replace("../../index.html");
   }
   function setBusy(btn, on, label) {
     if (on) { btn.dataset.html = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span><span>' + label + "</span>"; }
@@ -438,15 +447,19 @@ footer{border-top:1px solid var(--border);padding:20px 0 max(20px,env(safe-area-
   async function afterActivated() {
     await refreshUser(); render();
     const d = state.sub ? new Date(state.sub.current_period_end).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "";
-    statusMsg("ok", "🎉 Payment successful! Pro is active" + (d ? " until " + d : "") + ".");
     window.scrollTo({ top: 0, behavior: "smooth" });
+    if (cameFromApp()) {
+      statusMsg("ok", "🎉 Payment successful! Pro is active" + (d ? " until " + d : "") + ". Taking you back to Pipespec…");
+      setTimeout(backToApp, 2200);
+    } else {
+      statusMsg("ok", "🎉 Payment successful! Pro is active" + (d ? " until " + d : "") + ".");
+    }
   }
 
   $("#btn-upi").addEventListener("click",  e => pay("upi",   e.currentTarget));
   $("#btn-other").addEventListener("click", e => pay("other", e.currentTarget));
   $("#btn-card").addEventListener("click",  e => pay("card",  e.currentTarget));
   $("#btn-extend").addEventListener("click", () => { state.sub = null; render(); });
-  $("#btn-free").addEventListener("click", e => { if (e.currentTarget.getAttribute("aria-disabled")) e.preventDefault(); });
 
   // Returning from a UPI app on mobile: re-check the subscription.
   document.addEventListener("visibilitychange", async () => {

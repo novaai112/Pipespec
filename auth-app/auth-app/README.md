@@ -1,12 +1,15 @@
 # Login + Pricing + UPI Payments (Supabase + Razorpay)
 
 ```
-index.html        login / sign up / forgot / reset / account        (from before)
+login.html        login / sign up / forgot / reset / account
+profile.html      profile page: Free Plan / Pro Plan, photo, name, billing history
 pricing.html      Free vs Pro, monthly/yearly, ₹/$ auto-detect, UPI + card checkout
 terms.html  privacy.html  refund.html  delivery.html  contact.html   policy pages (+ legal.css, legal.js)
 config.js         your keys + company details (edit this)
-schema.sql        step 1 database: profiles                         (from before)
+schema.sql        step 1 database: profiles
 payments.sql      step 2 database: plans, payments, subscriptions
+profile.sql       step 3 database: profile photos + name rules
+entitlement.sql   step 4 database: my_entitlement() "is this user Pro right now?" (server clock)
 supabase/functions/
    create-order/       creates the Razorpay order (price comes from the DB, not the browser)
    verify-payment/     verifies the signature, re-checks with Razorpay, activates Pro
@@ -21,7 +24,7 @@ supabase/functions/
 2. Put the Supabase URL + anon key in `config.js`, set Site URL / Redirect URLs, enable Google (see the earlier steps: Authentication → URL Configuration and Providers).
 
 ### B. Database for payments
-Supabase → SQL Editor → paste **`payments.sql`** → Run. (Run `schema.sql` first.)
+Supabase → SQL Editor → run, in this order: **`schema.sql`**, **`payments.sql`**, **`profile.sql`**, **`entitlement.sql`**.
 Prices live in the `plans` table, so you can change them any time:
 ```sql
 update public.plans set amount_inr = 45900 where id = 'pro_monthly';  -- paise
@@ -66,7 +69,7 @@ Edit the `COMPANY_*`, `SUPPORT_*`, `JURISDICTION`, `REFUND_DAYS` values in `conf
 ```bash
 npx serve .      # or: python3 -m http.server 5500
 ```
-Open `http://localhost:5500/pricing.html`. Test payments with Razorpay test mode: UPI ID `success@razorpay` (success) or `failure@razorpay` (failure); test card `4111 1111 1111 1111`, any future expiry, any CVV, OTP `1234` if asked. When everything works, switch to Live keys (`supabase secrets set` again) and use https.
+Serve the repository ROOT (the folder that contains the main `index.html`), then open `http://localhost:5500/` for the app, or `http://localhost:5500/auth-app/auth-app/pricing.html` for the pricing page. Test payments with Razorpay test mode: UPI ID `success@razorpay` (success) or `failure@razorpay` (failure); test card `4111 1111 1111 1111`, any future expiry, any CVV, OTP `1234` if asked. When everything works, switch to Live keys (`supabase secrets set` again) and use https.
 
 ## How it behaves
 | Feature | How |
@@ -78,6 +81,24 @@ Open `http://localhost:5500/pricing.html`. Test payments with Razorpay test mode
 | Other methods | Separate button for cards, netbanking, wallets (INR); cards only for USD |
 | Security | Amount is read from the DB server-side; payment signature verified; payment re-checked with Razorpay; amount/currency compared; activation is idempotent; browsers can only read their own rows |
 | Pro status | Shown on the pricing page and the account page; renewals stack on the current end date |
+
+## How the main site (index.html) uses all this
+
+| Visitor does | Result |
+|---|---|
+| Taps a Pro feature (Compare, BOM, Drawing Sheet, 3D/2D, DXF/STEP download, a Pro component in the menu or search) | The site first checks login + Pro status |
+| …and is **not logged in** | "Upgrade to PRO" popup → button opens **login.html**. After login they return to the site |
+| …is logged in and Pro is **active** (end date in the future, checked with the server clock) | The feature opens normally |
+| …is logged in but Pro is **not bought / expired** | "Upgrade to PRO" popup (shows the end date if expired) → button opens **pricing.html** (the payment page) |
+| Chooses **Get started free** on pricing.html | Returns to the site home page |
+| Pays | Razorpay → signature verified on the server → `subscriptions` row activated → browser returns to the site with Pro features open |
+| Payment fails / is abandoned | No subscription row is written, so nothing unlocks |
+| Logged in | Profile icon appears (desktop: left of the 3D/2D icon; mobile: top of the **+** panel, above 3D/2D) and opens profile.html showing **Free Plan** or **Pro Plan** |
+| Logged out | No profile icon |
+
+Everything is controlled from `index.html` → "LOGIN + PRO ACCESS LAYER". If you ever move the auth folder, change the single `AUTH_BASE` value there (and the `../../index.html` links in these pages).
+
+**Security note.** Pro status is decided by the database and can only be set by the payment functions. The site itself is static, so the lock on the Pro buttons is a front-end gate: a developer who edits the page in their browser can bypass it. To truly protect a feature, serve it (for example 3D/DXF/STEP downloads) from an Edge Function that calls `is_pro()` first.
 
 ## Good to know
 - **No auto-renewal.** Each payment buys one month or one year. True auto-debit needs Razorpay Subscriptions / UPI AutoPay, which is a separate integration. The pricing page and policies say "no auto-renewal", so keep them in sync if you add it later.
