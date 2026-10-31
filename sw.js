@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pipespec-offline-v1';
+const CACHE_NAME = 'pipespec-offline-v2';
 
 // Exact file list mapped from your project directory
 const ASSETS_TO_CACHE = [
@@ -80,6 +80,11 @@ self.addEventListener('activate', (event) => {
 // 3. FETCH: Serve from cache first, fallback to network & cache dynamically (e.g. component-icons)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  // Login / pricing / profile pages and all Supabase / Razorpay traffic must ALWAYS come
+  // from the network, so Pro status is never served from a stale cache.
+  const reqUrl = new URL(event.request.url);
+  if (reqUrl.origin !== self.location.origin || reqUrl.pathname.includes('/auth-app/')) return;
 
   event.respondWith(
     (async () => {

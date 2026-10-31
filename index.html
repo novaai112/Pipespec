@@ -797,6 +797,17 @@
 
     <!-- Right Action Icons (Zoom/Fit, Print, Download, Settings, Help ? -> nova-analysis link) -->
     <div class="relative flex items-center space-x-2 text-white pr-1">
+      <!-- Profile icon: visible only when logged in (desktop: left of 3D/2D icon, mobile: top of the + panel) -->
+      <button type="button" id="profileNavButton" hidden
+        class="p-1 hover:bg-white/20 rounded transition inline-flex items-center justify-center"
+        title="Profile" aria-label="Profile">
+        <img class="ps-avatar" alt="" hidden referrerpolicy="no-referrer">
+        <svg class="ps-user-svg w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"></circle>
+          <path stroke-linecap="round" d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"></path>
+        </svg>
+        <span class="ps-plan-dot" aria-hidden="true"></span>
+      </button>
       <button type="button" id="drawing3dToggleButton" onclick="toggleDrawing3dView()"
         class="p-1 hover:bg-white/20 rounded transition inline-flex items-center justify-center"
         title="Open 3D Model" aria-label="Open 3D Model" aria-pressed="false">
@@ -18973,6 +18984,170 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
     </div>
   </div>
 
+  <!-- ===================== LOGIN + PRO ACCESS LAYER (Supabase) ===================== -->
+  <style>
+    /* Profile icon: hidden until a user is logged in. The id selector beats the mobile
+       "panel button { display:flex !important }" rule, so logged-out visitors never see it. */
+    #profileNavButton[hidden] { display: none !important; }
+    #profileNavButton { position: relative; overflow: visible; }
+    #profileNavButton .ps-avatar { width: 20px; height: 20px; border-radius: 9999px; object-fit: cover; background: #fff; }
+    #profileNavButton .ps-plan-dot {
+      position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 9999px;
+      border: 1.5px solid #1883d7; background: #9ca3af;
+    }
+    #profileNavButton.is-pro .ps-plan-dot { background: #f5b301; }
+    #upgradeProFeatureHint { white-space: pre-line; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth-app/auth-app/config.js"></script>
+  <script>
+  /* Pipespec access layer.
+     - Knows whether a visitor is logged in and whether their Pro plan is active (server clock).
+     - Shows the profile icon only while logged in.
+     - Sends people to login.html / pricing.html (payment) from the "Upgrade to PRO" popup.
+     Pro status is only ever granted by the server after a VERIFIED payment (see auth-app/). */
+  (function () {
+    'use strict';
+    var AUTH_BASE = 'auth-app/auth-app/';       // folder that holds login.html, pricing.html, profile.html
+    var CACHE_KEY = 'ps_ent_v1';                // last verified status (lets the installed/offline app keep working)
+    var RECHECK_MS = 5 * 60 * 1000;             // re-verify with the server at most every 5 minutes
+    var CFG = window.APP_CONFIG || {};
+    var sb = null;
+    try {
+      if (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) {
+        sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+        });
+      }
+    } catch (_) { sb = null; }
+
+    var state = { ready: false, loggedIn: false, isPro: false, endMs: 0, checkedAt: 0, avatar: null, plan: 'free', everEnded: 0 };
+    var inflight = null, expiryTimer = null;
+
+    function readCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (_) { return null; } }
+    function writeCache(v) { try { v ? localStorage.setItem(CACHE_KEY, JSON.stringify(v)) : localStorage.removeItem(CACHE_KEY); } catch (_) {} }
+
+    function applyIcon() {
+      var btn = document.getElementById('profileNavButton');
+      if (!btn) return;
+      btn.hidden = !state.loggedIn;
+      btn.classList.toggle('is-pro', state.loggedIn && state.isPro);
+      var label = state.isPro ? 'Profile · Pro Plan' : 'Profile · Free Plan';
+      btn.title = label; btn.setAttribute('aria-label', label);
+      var img = btn.querySelector('.ps-avatar'), svg = btn.querySelector('.ps-user-svg');
+      if (state.avatar && /^https?:\/\//i.test(state.avatar)) {
+        if (img.getAttribute('src') !== state.avatar) img.src = state.avatar;
+        img.hidden = false; svg.style.display = 'none';
+      } else { img.hidden = true; svg.style.display = ''; }
+    }
+
+    function scheduleExpiry() {
+      clearTimeout(expiryTimer);
+      if (state.isPro && state.endMs > Date.now()) {
+        var ms = Math.min(state.endMs - Date.now() + 1500, 2147000000);
+        expiryTimer = setTimeout(function () { refresh(true); }, ms);   // Pro just ended -> re-check
+      }
+    }
+
+    async function loadAvatar(userId, session) {
+      try {
+        var r = await sb.from('profiles').select('avatar_url').eq('id', userId).maybeSingle();
+        var meta = (session && session.user && session.user.user_metadata) || {};
+        state.avatar = (r.data && r.data.avatar_url) || meta.avatar_url || meta.picture || null;
+      } catch (_) { state.avatar = null; }
+    }
+
+    async function doRefresh() {
+      var prevUid = (readCache() || {}).uid;
+      try {
+        if (!sb) throw new Error('offline-mode');
+        var s = await sb.auth.getSession();
+        var session = s && s.data && s.data.session;
+        if (!session) {
+          state = { ready: true, loggedIn: false, isPro: false, endMs: 0, checkedAt: Date.now(), avatar: null, plan: 'free', everEnded: 0 };
+          writeCache(null);
+          return state;
+        }
+        var ent = null;
+        var r = await sb.rpc('my_entitlement');                 // server clock (entitlement.sql)
+        if (!r.error && r.data) {
+          ent = r.data;
+          if (ent.logged_in === false) {                         // token no longer valid
+            state = { ready: true, loggedIn: false, isPro: false, endMs: 0, checkedAt: Date.now(), avatar: null, plan: 'free', everEnded: 0 };
+            writeCache(null);
+            return state;
+          }
+        } else {                                                 // entitlement.sql not run yet -> read the table
+          var q = await sb.from('subscriptions').select('plan_id,status,current_period_end').maybeSingle();
+          if (q.error && /fetch|network/i.test(q.error.message || '')) throw new Error('network');
+          var sub = q.data, end = sub ? new Date(sub.current_period_end).getTime() : 0;
+          ent = { logged_in: true, is_pro: !!(sub && sub.status === 'active' && end > Date.now()),
+                  plan: sub ? sub.plan_id : 'free', current_period_end: sub && sub.current_period_end };
+        }
+        var endMs = ent.current_period_end ? new Date(ent.current_period_end).getTime() : 0;
+        var isPro = !!ent.is_pro && endMs > Date.now();
+        state = { ready: true, loggedIn: true, isPro: isPro, endMs: endMs, checkedAt: Date.now(), avatar: state.avatar,
+                  plan: isPro ? ent.plan : 'free', everEnded: (!isPro && endMs) ? endMs : 0 };
+        writeCache({ uid: session.user.id, isPro: isPro, endMs: endMs });
+        loadAvatar(session.user.id, session).then(applyIcon);
+        return state;
+      } catch (err) {
+        // No network / script blocked: allow only what was verified earlier and has not expired yet.
+        var c = readCache();
+        var ok = !!(c && c.isPro && c.endMs > Date.now());
+        state = { ready: true, loggedIn: !!c, isPro: ok, endMs: c ? c.endMs : 0, checkedAt: Date.now(),
+                  avatar: state.avatar, plan: ok ? 'pro' : 'free', everEnded: (c && !ok) ? c.endMs : 0 };
+        return state;
+      }
+    }
+
+    function refresh(force) {
+      if (inflight && !force) return inflight;
+      inflight = doRefresh().then(function (st) { applyIcon(); scheduleExpiry(); inflight = null; return st; },
+                                  function () { inflight = null; return state; });
+      return inflight;
+    }
+
+    /* 'allow' = verified Pro | 'deny' = verified not Pro | 'verify' = ask the server first */
+    function quickCheck() {
+      if (!state.ready || Date.now() - state.checkedAt > RECHECK_MS) return 'verify';
+      return (state.loggedIn && state.isPro && state.endMs > Date.now()) ? 'allow' : 'deny';
+    }
+
+    function hintLine() {
+      if (!state.loggedIn) return 'Please log in to continue';
+      if (state.everEnded) {
+        var d = new Date(state.everEnded).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        return 'Your Pro plan ended on ' + d + ' — renew to continue';
+      }
+      return 'You are on the Free plan — upgrade to unlock';
+    }
+
+    async function goUpgrade() {
+      var st = await refresh(true);
+      var overlay = document.getElementById('upgradeProOverlay');
+      if (st.loggedIn && st.isPro) { if (overlay) overlay.classList.remove('open'); return; }   // already Pro (e.g. paid in another tab)
+      try { localStorage.setItem('ps_return_home', String(Date.now())); } catch (_) {}      // so login / payment brings them back here
+      location.href = AUTH_BASE + (st.loggedIn ? 'pricing.html' : 'login.html');
+    }
+
+    function goProfile() { location.href = AUTH_BASE + 'profile.html'; }
+
+    window.PipespecAccess = { refresh: refresh, quickCheck: quickCheck, hintLine: hintLine, goUpgrade: goUpgrade,
+                              goProfile: goProfile, state: function () { return state; } };
+
+    /* ---- wire up ---- */
+    var pbtn = document.getElementById('profileNavButton');
+    if (pbtn) pbtn.addEventListener('click', function (e) { e.preventDefault(); goProfile(); });
+
+    refresh();
+    if (sb) sb.auth.onAuthStateChange(function () { setTimeout(function () { refresh(true); }, 0); });
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') refresh(true); });
+    window.addEventListener('storage', function (e) { if (e.key && e.key.indexOf('auth-token') !== -1) refresh(true); });
+    window.addEventListener('online', function () { refresh(true); });
+  })();
+  </script>
+
   <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -19064,7 +19239,11 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
       if (backdrop) backdrop.classList.remove('active');
 
       if (hint) {
-        hint.textContent = featureName ? `${featureName} is a Pipespec-Pro feature` : '';
+        const A = window.PipespecAccess;
+        const lines = [];
+        if (featureName) lines.push(`${featureName} is a Pipespec-Pro feature`);
+        if (A) lines.push(A.hintLine());
+        hint.textContent = lines.join('\n');
       }
 
       overlay.classList.add('open');
@@ -19073,6 +19252,38 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
     function closeUpgradeProModal() {
       const overlay = document.getElementById('upgradeProOverlay');
       if (overlay) overlay.classList.remove('open');
+    }
+
+    // Returns true when the click was blocked. Verified Pro users are let through.
+    function proBlocked(e, featureName, replayEl, onBlock) {
+      if (window.__psProBypass) return false;               // replayed click after a successful check
+      const A = window.PipespecAccess;
+      const verdict = A ? A.quickCheck() : 'deny';
+      if (verdict === 'allow') return false;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      const showPopup = () => {
+        if (onBlock) onBlock();
+        openUpgradeProModal(featureName);
+      };
+
+      if (verdict === 'verify' && A) {
+        // Status unknown or stale: ask the server, then continue or show the popup.
+        A.refresh(true).then(() => {
+          if (A.quickCheck() === 'allow' && replayEl) {
+            window.__psProBypass = true;
+            try { replayEl.click(); } finally { window.__psProBypass = false; }
+          } else {
+            showPopup();
+          }
+        });
+      } else {
+        showPopup();
+      }
+      return true;
     }
 
     function setupProAccessGuards() {
@@ -19092,6 +19303,8 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
       if (cardBtn) {
         cardBtn.addEventListener('click', () => {
           closeUpgradeProModal();
+          // Not logged in -> login.html | logged in but no active Pro -> pricing.html (payment)
+          if (window.PipespecAccess) window.PipespecAccess.goUpgrade();
         });
       }
 
@@ -19123,10 +19336,7 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
             }
 
             if (blockedFeature) {
-              e.preventDefault();
-              e.stopPropagation();
-              e.stopImmediatePropagation();
-              openUpgradeProModal(blockedFeature);
+              proBlocked(e, blockedFeature, btn);
               return;
             }
           }
@@ -19142,10 +19352,7 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
             const labelText = labelEl ? labelEl.textContent.trim() : menuRow.textContent.trim();
 
             if (!isFreeMenuComponent(labelText)) {
-              e.preventDefault();
-              e.stopPropagation();
-              e.stopImmediatePropagation();
-              openUpgradeProModal(labelText);
+              proBlocked(e, labelText, menuRow);
               return;
             }
           }
@@ -19168,12 +19375,10 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
             ].some((kw) => rowTxt.toLowerCase().includes(kw));
 
             if (!allowedInSearch) {
-              e.preventDefault();
-              e.stopPropagation();
-              e.stopImmediatePropagation();
               const searchModal = document.getElementById('componentSearchDialog');
-              if (searchModal) searchModal.classList.add('hidden');
-              openUpgradeProModal(rowTxt.split('\n')[0].trim());
+              proBlocked(e, rowTxt.split('\n')[0].trim(), searchResultRow, () => {
+                if (searchModal) searchModal.classList.add('hidden');
+              });
             }
           }
         },
