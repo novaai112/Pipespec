@@ -9,6 +9,7 @@
     <script src="../assets/vendor/tailwindcss-play-cdn.js"></script>
     <!-- Three.js r128 -->
     <script src="../assets/vendor/three-r128.min.js"></script>
+    <script src="components3d.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -1455,8 +1456,38 @@ function initializeStandardSelectors() {
     updateInputFieldsVisibility(currentFlangeType);
 }
 
+let componentActive = false;
+function showComponentModel(config) {
+    componentActive = true;
+    while (flangeGroup.children.length) {
+        const c = flangeGroup.children[0];
+        c.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+        flangeGroup.remove(c);
+    }
+    const mat = (typeof carbonSteelMat !== 'undefined' && carbonSteelMat) ? carbonSteelMat.clone() : undefined;
+    const model = Pipespec3D.build(config, mat);
+    model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    flangeGroup.add(model);
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    setZoomLimitsForSize(maxDim);
+    panOffset.copy(ctr);
+    spherical.radius = maxDim * 2.1;
+    componentFit = { center: ctr.clone(), radius: spherical.radius };
+    updateCameraTransform();
+    ['headerSubTitle', 'hudTitle'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && config.title) el.textContent = String(config.title);
+    });
+}
+
 function applyEmbeddedModelConfig(config) {
     if (!embeddedViewerMode || !config || typeof config !== 'object') return;
+
+    if (config.kind === 'component') { showComponentModel(config); return; }
+    componentActive = false;
+    resetZoomLimits();
 
     if (config.standard === 'B16.47A' || config.standard === 'B16.47B') {
         if (!['wn', 'bl'].includes(config.flangeType) ||
@@ -2034,6 +2065,28 @@ let toonGradientMap = null;
 let isDragging = false, isRightDrag = false;
 let prevMouse = { x: 0, y: 0 };
 let spherical = { radius: 410, theta: Math.PI * 0.30, phi: Math.PI * 0.35 };
+// Zoom limits scale with the displayed part so very small (rings, thin gaskets) and very large parts both work.
+let zoomMinRadius = 85, zoomMaxRadius = 1800;
+let componentFit = null;
+function setZoomLimitsForSize(maxDim) {
+    zoomMinRadius = Math.max(0.4, maxDim * 0.02);
+    zoomMaxRadius = Math.max(1800, maxDim * 8);
+    if (perspCamera) {
+        perspCamera.near = Math.max(0.02, zoomMinRadius * 0.05);
+        perspCamera.far = Math.max(8000, zoomMaxRadius * 4);
+        perspCamera.updateProjectionMatrix();
+    }
+    if (orthoCamera) {
+        orthoCamera.near = -Math.max(2000, zoomMaxRadius);
+        orthoCamera.far = Math.max(8000, zoomMaxRadius * 4);
+        orthoCamera.updateProjectionMatrix();
+    }
+}
+function resetZoomLimits() {
+    zoomMinRadius = 85; zoomMaxRadius = 1800; componentFit = null;
+    if (perspCamera) { perspCamera.near = 1; perspCamera.far = 8000; perspCamera.updateProjectionMatrix(); }
+    if (orthoCamera) { orthoCamera.near = -2000; orthoCamera.far = 8000; orthoCamera.updateProjectionMatrix(); }
+}
 let panOffset = new THREE.Vector3(0, 32, 0);
 let camBeforeDrag = null;
 
@@ -2325,7 +2378,7 @@ function initThreeJS() {
     });
     dom.addEventListener('wheel', e => {
         e.preventDefault();
-        spherical.radius = Math.max(85, Math.min(1800, spherical.radius * (1 + e.deltaY * 0.001)));
+        spherical.radius = Math.max(zoomMinRadius, Math.min(zoomMaxRadius, spherical.radius * (1 + e.deltaY * 0.001)));
         updateCameraTransform();
     }, { passive: false });
 
@@ -2409,6 +2462,13 @@ function toggleHudMenu(menuId, ev) {
 // 1. Zoom to Fit
 function zoomToFit() {
     pushViewHistory();
+    if (componentActive && componentFit) {
+        panOffset.copy(componentFit.center);
+        spherical.radius = componentFit.radius;
+        updateCameraTransform();
+        showToast('Zoom to Fit (F)');
+        return;
+    }
     const p = getParams();
     panOffset.set(0, p.z4 * 0.36, 0);
     spherical.radius = p.od * 1.46;
@@ -2484,7 +2544,7 @@ function initZoomToAreaEvents() {
             panOffset.y -= ndcY * panScale;
 
             const zoomFactor = Math.max(0.22, Math.min(0.85, Math.max(w / rect.width, h / rect.height)));
-            spherical.radius = Math.max(85, spherical.radius * zoomFactor);
+            spherical.radius = Math.max(zoomMinRadius, spherical.radius * zoomFactor);
             updateCameraTransform();
             showToast('Zoomed to selected area');
         }
@@ -2751,7 +2811,7 @@ function createSmoothLatheBand(r1, z1, r2, z2, segs, startAng, totalAngle, mat) 
 
 // Builds the SOLIDWORKS RealView Polished Carbon Steel 3D B-Rep Model for ALL 7 FLANGE TYPES
 function rebuild3DFlange(p) {
-    if (!flangeGroup) return;
+    if (!flangeGroup || componentActive) return;
     while (flangeGroup.children.length > 0) {
         const c = flangeGroup.children[0];
         if (c.geometry) c.geometry.dispose();
@@ -4266,8 +4326,8 @@ window.onload = function () {
             if (prevPinchDist > 10 && dist > 10) {
               const scale = prevPinchDist / dist;
               spherical.radius = Math.max(
-                85,
-                Math.min(1800, spherical.radius * scale)
+                zoomMinRadius,
+                Math.min(zoomMaxRadius, spherical.radius * scale)
               );
             }
 
@@ -4375,7 +4435,7 @@ window.onload = function () {
               0.22,
               Math.min(0.85, Math.max(w / rect.width, h / rect.height))
             );
-            spherical.radius = Math.max(85, spherical.radius * zoomFactor);
+            spherical.radius = Math.max(zoomMinRadius, spherical.radius * zoomFactor);
             if (typeof updateCameraTransform === 'function') updateCameraTransform();
             if (typeof showToast === 'function') showToast('Zoomed to selected area');
           }
