@@ -14609,7 +14609,103 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
       };
     }
 
+    function getButtweld3dModelConfig() {
+      const st = { ...appState, generalUnits: "metric" };
+      const type = getButtweldFittingType(st.fittingType);
+      const row = getButtweldRow(st.size, st.fittingType, st.schedule, "metric");
+      if (!row) return { supported: false, message: "The selected butt-weld fitting size or schedule is not manufactured." };
+      const num = value => Number(String(value ?? "").trim());
+      // PIPE_DATA keys fractions as "0+1/2", while the buttweld helpers strip the "0+": try both.
+      const pipeRowFor = size => {
+        const sch = st.fittingType === "ftbw11" && st.schedule === "5" ? "5s" : st.schedule;
+        const table = window.PIPE_DATA.metric?.[sch] || {};
+        const key = normalizeButtweldSize(size);
+        return table[key] || table[`0+${key}`] || table[String(size)] || null;
+      };
+      const pipe = pipeRowFor(st.size);
+      const od = num(row[2]) > 0 ? num(row[2]) : num(pipe?.[1]);
+      const wall = num(pipe?.[2]);
+      const smallPipe = isButtweldReducingType(st.fittingType) ? pipeRowFor(st.smallSize) : null;
+      const cfg = {
+        kind: "component", standard: "B16.9", modelSource: "3D%20Model/3D%20Model.html?embedded=1",
+        type: type.id, od, wall,
+        smallOd: num(smallPipe?.[1]) || od, smallWall: num(smallPipe?.[2]) || wall
+      };
+      const smallValue = isButtweldReducingType(st.fittingType)
+        ? getButtweldDimensionValue(row, "smallSize", st) : null;
+      switch (type.id) {
+        case "ftbw1": case "ftbw2": case "ftbw3": case "ftbw4": case "ftbw5": cfg.ctrEnd = num(row[4]); break;
+        case "ftbw6": cfg.ctrEnd = num(row[3]); cfg.branch = num(row[4]); break;
+        case "ftbw7": cfg.ctrEnd = num(row[3]); cfg.branch = smallValue; break;
+        case "ftbw8": cfg.capLength = num(row[4]); break;
+        case "ftbw9": case "ftbw10": cfg.length = smallValue; break;
+        case "ftbw11": cfg.stubLength = num(row[5]); cfg.collarOd = num(row[6]); cfg.radius = num(row[9]); break;
+      }
+      if (!(wall > 0)) {
+        return { supported: false, message: "The pipe data has no wall thickness for this size and schedule, so a 3D model cannot be built." };
+      }
+      const needed = ["od", "wall", "ctrEnd", "branch", "capLength", "length", "stubLength", "collarOd"]
+        .filter(key => key in cfg);
+      if (!(od > 0) || !(wall > 0) || needed.some(key => !(Number(cfg[key]) > 0))) {
+        return { supported: false, message: "The selected butt-weld fitting does not have complete dimension data for a 3D model." };
+      }
+      cfg.supported = true;
+      cfg.title = `NPS ${st.size} ${type.label} Sch-${st.schedule}`;
+      cfg.fileBaseName = `ASME_B16_9_${type.id.toUpperCase()}_NPS_${st.size}_Sch_${st.schedule}`.replace(/[^\w.-]+/g, "_") + ".stp";
+      return cfg;
+    }
+
+    // ---- 3D gasket configs: read the same rows the 2D drawing uses, always in metric (mm). ----
+    const GASKET_3D_MODEL_SOURCE = "3D%20Model/3D%20Model.html?embedded=1";
+
+    function getFlatGasket3dModelConfig() {
+      const st = { ...appState, generalUnits: "metric" };
+      if (!isValidNonmetallicFlatGasketRow(st)) {
+        return { supported: false, message: "The selected flat gasket size or class is not manufactured, so a 3D model cannot be built." };
+      }
+      const data = getNonmetallicFlatGasketRow(st);
+      const type = getNonmetallicFlatGasketType(st.flangeType);
+      const id = Number(data.row[3]);
+      const od = Number(data.row[data.dimensionColumn]);
+      if (!(id > 0) || !(od > id)) {
+        return { supported: false, message: "The selected flat gasket does not have valid ID/OD data for a 3D model." };
+      }
+      return {
+        supported: true, kind: "component", standard: "B16.21", modelSource: GASKET_3D_MODEL_SOURCE,
+        type: type.id, id, od,
+        thickness: 1.6, // not tabulated (2D shows "Client specified"); 1.6 mm (1/16") is the standard B16.21 thickness
+        title: `NPS ${st.size} ${type.label} ${st.flangeClass}`,
+        fileBaseName: `ASME_B16_21_${type.id.toUpperCase()}_NPS_${st.size}_${st.flangeClass}`.replace(/[^\w.-]+/g, "_") + ".stp"
+      };
+    }
+
+    function getSpiralGasket3dModelConfig() {
+      const st = { ...appState, generalUnits: "metric" };
+      if (!isValidSpiralWoundGasketRow(st)) {
+        return { supported: false, message: "The selected spiral-wound gasket size or class is not manufactured, so a 3D model cannot be built." };
+      }
+      const data = getSpiralWoundGasketRow(st);
+      const type = SPIRAL_WOUND_GASKET_TYPES.find(item => item.id === st.flangeType) || SPIRAL_WOUND_GASKET_TYPES[0];
+      const [d1, d2, d3, d4] = data.dimensionColumns.map(index => Number(data.row[index]));
+      const thk = Number(data.row[data.thicknessColumn]);
+      if (!(d1 < d2 && d2 < d3 && d3 < d4) || !(thk > 0)) {
+        return { supported: false, message: "The selected spiral-wound gasket does not have consistent diameter data for a 3D model." };
+      }
+      return {
+        supported: true, kind: "component", standard: "B16.20", modelSource: GASKET_3D_MODEL_SOURCE,
+        type: type.id, d1, d2, d3, d4, thk,
+        ringThk: 3.2, // inner / centring ring thickness (1/8")
+        title: `NPS ${st.size} ${type.label} ${st.flangeClass}`,
+        fileBaseName: `ASME_B16_20_${type.id.toUpperCase()}_NPS_${st.size}_${st.flangeClass}`.replace(/[^\w.-]+/g, "_") + ".stp"
+      };
+    }
+
     function getB1653dModelConfig() {
+      if (isNonmetallicFlatGasket()) return getFlatGasket3dModelConfig();
+      if (isSpiralWoundGasket()) return getSpiralGasket3dModelConfig();
+      if (appState.viewMode === "buttweld" || (typeof isButtweldFittingMode === "function" && isButtweldFittingMode())) {
+        return getButtweld3dModelConfig();
+      }
       if (isSeriesAFlange()) return getB1647SeriesA3dModelConfig();
       if (isSeriesBFlange()) return getB1647SeriesB3dModelConfig();
       const modelTypeByFlange = {
@@ -14735,6 +14831,7 @@ window.PIPE_DATA = {"schedules":["5s","5","10s","10","20","30","40s","STD","40",
       const config = getB1653dModelConfig();
       try {
         if (!config.supported) throw new Error(config.message);
+        if (config.kind === "component") throw new Error("STEP export is currently available for flanges only.");
         if (!drawing3dFrameReady) throw new Error("The 3D model is still loading. Please try again.");
         const modelWindow = frame.contentWindow;
         if (typeof modelWindow.applyEmbeddedModelConfig !== "function" ||
